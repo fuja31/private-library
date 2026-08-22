@@ -160,9 +160,20 @@
   .btn.danger:hover{background:var(--peach);color:#fff;}
   .btn.small{padding:6px 14px;font-size:12px;}
 
-  .shelf-tabs{display:flex;gap:7px;flex-wrap:wrap;padding:14px clamp(16px,4vw,52px) 0;}
+  .shelf-tabs{display:flex;gap:7px;flex-wrap:wrap;padding:0;}
+  .filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px clamp(16px,4vw,52px) 0;}
+  .rak-filter-select{
+    font-family:var(--font-label);font-size:12.5px;font-weight:600;letter-spacing:0.02em;
+    background:var(--card);color:var(--text-deep);border:1px solid var(--blush-2);
+    padding:9px 30px 9px 14px;border-radius:999px;appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B37F6E' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;background-size:14px;
+    cursor:pointer;
+  }
+  .rak-filter-select:focus{outline:none;border-color:var(--pink);}
   .shelf-tab{font-family:var(--font-label);font-size:12px;padding:7px 15px;border-radius:999px;border:1.5px solid var(--blush-2);background:var(--card);color:var(--text-soft);}
   .shelf-tab.active{background:var(--pink);border-color:var(--pink);color:#fff;font-weight:600;}
+  .status-tab.active{background:var(--rosegold);border-color:var(--rosegold);color:#fff;}
 
   main{padding:22px clamp(16px,4vw,52px) 60px;}
   .rak{margin-bottom:38px;}
@@ -303,7 +314,10 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
   </div>
 </header>
 
-<div class="shelf-tabs" id="shelfTabs"></div>
+<div class="filter-bar">
+  <select id="rakFilterSelect" class="rak-filter-select"></select>
+  <div class="shelf-tabs" id="statusFilter"></div>
+</div>
 
 <main id="mainArea"><div class="loading-state">Memuat koleksi...</div></main>
 
@@ -316,9 +330,12 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     <form id="bookForm">
       <input type="hidden" id="bookId">
       <div class="field"><label>Judul</label><input type="text" id="fJudul" required></div>
-      <div class="field"><label>Penulis</label><input type="text" id="fPenulis"></div>
+      <div class="field"><label>Penulis</label><input type="text" id="fPenulis" list="penulisList"><datalist id="penulisList"></datalist></div>
       <div class="field-row">
-        <div class="field"><label>Rak</label><input type="text" id="fRak" placeholder="Umum" list="rakList"><datalist id="rakList"></datalist></div>
+        <div class="field"><label>Rak</label>
+          <select id="fRakSelect"></select>
+          <input type="text" id="fRakNew" placeholder="Nama rak baru" style="display:none;margin-top:8px;">
+        </div>
         <div class="field"><label>Status</label>
           <select id="fStatus">
             <option value="belum">Belum dibaca</option>
@@ -362,6 +379,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 const STORAGE_KEY = 'books-collection';
 let books = [];
 let activeRak = '__semua__';
+let activeStatus = '__semua__';
 let searchTerm = '';
 const SPINE_COLORS = ['var(--pink-dark)','var(--lilac)','var(--sage)','var(--peach)','var(--rosegold)','#C98FA6'];
 
@@ -550,29 +568,53 @@ function compressImage(file, maxWidth=240, quality=0.72){
 }
 
 /* ---------------- Rendering ---------------- */
-function render(){ renderTabs(); renderAsalList(); renderMain(); }
+function render(){ renderTabs(); renderAsalList(); renderPenulisList(); renderStatusFilter(); renderMain(); }
 
 function renderAsalList(){
   const asalValues = Array.from(new Set(books.map(b=>b.asal).filter(Boolean))).sort();
   document.getElementById('asalList').innerHTML = asalValues.map(a=>`<option value="${escapeHtml(a)}">`).join('');
 }
 
+function renderPenulisList(){
+  const penulisValues = Array.from(new Set(books.map(b=>b.penulis).filter(Boolean))).sort();
+  document.getElementById('penulisList').innerHTML = penulisValues.map(p=>`<option value="${escapeHtml(p)}">`).join('');
+}
+
 function renderTabs(){
   const raks = Array.from(new Set(books.map(b=>b.rak||'Umum'))).sort();
-  const tabsEl = document.getElementById('shelfTabs');
-  let html = `<button class="shelf-tab ${activeRak==='__semua__'?'active':''}" data-rak="__semua__">Semua Rak</button>`;
-  raks.forEach(r=>{ html += `<button class="shelf-tab ${activeRak===r?'active':''}" data-rak="${escapeHtml(r)}">${escapeHtml(r)}</button>`; });
-  tabsEl.innerHTML = html;
-  tabsEl.querySelectorAll('.shelf-tab').forEach(btn=>{ btn.onclick = ()=>{ activeRak = btn.dataset.rak; render(); }; });
-  document.getElementById('rakList').innerHTML = raks.map(r=>`<option value="${escapeHtml(r)}">`).join('');
+  const sel = document.getElementById('rakFilterSelect');
+  let html = `<option value="__semua__">Semua Rak (${books.length})</option>`;
+  raks.forEach(r=>{
+    const count = books.filter(b=>(b.rak||'Umum')===r).length;
+    html += `<option value="${escapeHtml(r)}">${escapeHtml(r)} (${count})</option>`;
+  });
+  sel.innerHTML = html;
+  sel.value = raks.includes(activeRak) || activeRak==='__semua__' ? activeRak : '__semua__';
+  if(sel.value !== activeRak) activeRak = sel.value;
+}
+document.getElementById('rakFilterSelect').onchange = (e)=>{ activeRak = e.target.value; render(); };
+
+
+function renderStatusFilter(){
+  const wrap = document.getElementById('statusFilter');
+  if(!wrap) return;
+  const options = [
+    {key:'__semua__', label:'Semua Status'},
+    {key:'belum', label:'Belum Dibaca'},
+    {key:'sedang', label:'Sedang Dibaca'},
+    {key:'selesai', label:'Selesai'},
+  ];
+  wrap.innerHTML = options.map(o=>`<button class="shelf-tab status-tab ${activeStatus===o.key?'active':''}" data-status="${o.key}">${o.label}</button>`).join('');
+  wrap.querySelectorAll('.status-tab').forEach(btn=>{ btn.onclick = ()=>{ activeStatus = btn.dataset.status; render(); }; });
 }
 
 function filteredBooks(){
   return books.filter(b=>{
     const matchRak = activeRak==='__semua__' || (b.rak||'Umum')===activeRak;
+    const matchStatus = activeStatus==='__semua__' || b.status===activeStatus;
     const term = searchTerm.trim().toLowerCase();
     const matchSearch = !term || (b.judul||'').toLowerCase().includes(term) || (b.penulis||'').toLowerCase().includes(term);
-    return matchRak && matchSearch;
+    return matchRak && matchStatus && matchSearch;
   });
 }
 
@@ -673,13 +715,41 @@ function openDetail(id){
 /* ---------------- Form modal ---------------- */
 let pendingCoverDataUrl = null;
 
+function populateRakSelect(selectedValue){
+  const sel = document.getElementById('fRakSelect');
+  const newInput = document.getElementById('fRakNew');
+  let raks = Array.from(new Set(books.map(b=>b.rak||'Umum'))).sort();
+  if(raks.length===0) raks = ['Umum'];
+  const val = selectedValue || 'Umum';
+  const isKnown = raks.includes(val);
+  let html = raks.map(r=>`<option value="${escapeHtml(r)}" ${r===val?'selected':''}>${escapeHtml(r)}</option>`).join('');
+  html += `<option value="__baru__">+ Tambah rak baru...</option>`;
+  sel.innerHTML = html;
+  if(isKnown){
+    sel.value = val;
+    newInput.style.display = 'none';
+    newInput.value = '';
+  } else {
+    // rak dari buku ini tidak ada di daftar (kasus jarang) — tetap tampilkan sebagai pilihan baru
+    sel.value = '__baru__';
+    newInput.style.display = 'block';
+    newInput.value = val;
+  }
+}
+
+document.getElementById('fRakSelect').onchange = (e)=>{
+  const newInput = document.getElementById('fRakNew');
+  newInput.style.display = e.target.value === '__baru__' ? 'block' : 'none';
+  if(e.target.value === '__baru__') newInput.focus();
+};
+
 function openForm(book, presetRak){
   pendingCoverDataUrl = null;
   document.getElementById('formTitle').textContent = book? 'Edit Buku' : 'Tambah Buku';
   document.getElementById('bookId').value = book? book.id : '';
   document.getElementById('fJudul').value = book? book.judul : '';
   document.getElementById('fPenulis').value = book? (book.penulis||'') : '';
-  document.getElementById('fRak').value = book? (book.rak||'') : (presetRak||'');
+  populateRakSelect(book? (book.rak||'Umum') : (presetRak||'Umum'));
   document.getElementById('fStatus').value = book? book.status : 'belum';
   document.getElementById('fCatatan').value = book? (book.catatan||'') : '';
   document.getElementById('fHarga').value = book? (book.harga||'') : '';
@@ -697,6 +767,7 @@ function openForm(book, presetRak){
   }
   document.getElementById('overlayForm').classList.add('show');
 }
+
 
 document.getElementById('btnTambah').onclick = ()=> openForm(null);
 document.getElementById('closeForm').onclick = ()=> document.getElementById('overlayForm').classList.remove('show');
@@ -719,11 +790,15 @@ document.getElementById('bookForm').onsubmit = async (e)=>{
   e.preventDefault();
   const id = document.getElementById('bookId').value || uid();
   const existing = books.find(b=>b.id===id);
+  const rakSelectVal = document.getElementById('fRakSelect').value;
+  const finalRak = rakSelectVal==='__baru__'
+    ? (document.getElementById('fRakNew').value.trim() || 'Umum')
+    : rakSelectVal;
   const book = {
     id,
     judul: document.getElementById('fJudul').value.trim() || 'Tanpa Judul',
     penulis: document.getElementById('fPenulis').value.trim(),
-    rak: document.getElementById('fRak').value.trim() || 'Umum',
+    rak: finalRak,
     status: document.getElementById('fStatus').value,
     catatan: document.getElementById('fCatatan').value.trim(),
     harga: document.getElementById('fHarga').value.trim(),
