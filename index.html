@@ -305,7 +305,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
   <div class="brand">
     <span class="eyebrow">koleksi kesayangan</span>
     <h1>Perpustakaan Saya</h1>
-    <span class="shared-note">Tersimpan di perangkat ini &middot; offline, tanpa internet</span>
+    
   </div>
   <div class="header-actions">
     <div class="search-slot">
@@ -373,7 +373,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 
       <div class="section-divider">Sumber Perolehan</div>
       <div class="field-row">
-        <div class="field"><label>Harga</label><input type="text" id="fHarga" placeholder="cth: Rp 85.000"></div>
+        <div class="field"><label>Harga</label><input type="text" id="fHarga" placeholder="cth: 85.000 atau Gratis"></div>
         <div class="field"><label>Tanggal Perolehan</label><input type="date" id="fTanggal"></div>
       </div>
       <div class="field"><label>Asal / Sumber</label>
@@ -613,6 +613,15 @@ function setupAutocomplete(inputId, listId, getValues){
 }
 setupAutocomplete('fPenulis', 'fPenulisAc', ()=> Array.from(new Set(books.map(b=>b.penulis).filter(Boolean))).sort());
 setupAutocomplete('fAsal', 'fAsalAc', ()=> Array.from(new Set(books.map(b=>b.asal).filter(Boolean))).sort());
+
+/* Format otomatis ribuan untuk Harga — hanya jika isinya murni angka, tetap bebas kalau ada huruf */
+document.getElementById('fHarga').addEventListener('input', (e)=>{
+  const raw = e.target.value;
+  if(/[a-zA-Z]/.test(raw)) return; // ada huruf, biarkan bebas (mis. "Hadiah", "Gratis")
+  const digits = raw.replace(/[^0-9]/g,'');
+  if(digits.length===0){ return; }
+  e.target.value = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+});
 
 function renderTabs(){
   const raks = Array.from(new Set(books.map(b=>b.rak||'Umum'))).sort();
