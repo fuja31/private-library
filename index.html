@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Katalog Buku</title>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -171,6 +171,18 @@
     cursor:pointer;
   }
   .rak-filter-select:focus{outline:none;border-color:var(--pink);}
+  .ac-wrap{position:relative;}
+  .ac-list{
+    display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+    background:#fff;border:1px solid var(--blush-2);border-radius:10px;
+    box-shadow:0 14px 32px rgba(92,50,71,0.22);max-height:180px;overflow-y:auto;z-index:30;
+  }
+  .ac-list.show{display:block;}
+  .ac-list button{
+    display:block;width:100%;text-align:left;background:transparent;border:none;
+    padding:9px 12px;font-family:var(--font-body);font-size:13.5px;color:var(--text-deep);
+  }
+  .ac-list button:hover, .ac-list button.hl{background:var(--blush);}
   .shelf-tab{font-family:var(--font-label);font-size:12px;padding:7px 15px;border-radius:999px;border:1.5px solid var(--blush-2);background:var(--card);color:var(--text-soft);}
   .shelf-tab.active{background:var(--pink);border-color:var(--pink);color:#fff;font-weight:600;}
   .status-tab.active{background:var(--rosegold);border-color:var(--rosegold);color:#fff;}
@@ -330,7 +342,12 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     <form id="bookForm">
       <input type="hidden" id="bookId">
       <div class="field"><label>Judul</label><input type="text" id="fJudul" required></div>
-      <div class="field"><label>Penulis</label><input type="text" id="fPenulis" list="penulisList"><datalist id="penulisList"></datalist></div>
+      <div class="field"><label>Penulis</label>
+        <div class="ac-wrap">
+          <input type="text" id="fPenulis" autocomplete="off">
+          <div class="ac-list" id="fPenulisAc"></div>
+        </div>
+      </div>
       <div class="field-row">
         <div class="field"><label>Rak</label>
           <select id="fRakSelect"></select>
@@ -359,7 +376,12 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
         <div class="field"><label>Harga</label><input type="text" id="fHarga" placeholder="cth: Rp 85.000"></div>
         <div class="field"><label>Tanggal Perolehan</label><input type="date" id="fTanggal"></div>
       </div>
-      <div class="field"><label>Asal / Sumber</label><input type="text" id="fAsal" placeholder="cth: Toko Buku Gramedia, hadiah dari..." list="asalList"><datalist id="asalList"></datalist></div>
+      <div class="field"><label>Asal / Sumber</label>
+        <div class="ac-wrap">
+          <input type="text" id="fAsal" placeholder="cth: Toko Buku Gramedia, hadiah dari..." autocomplete="off">
+          <div class="ac-list" id="fAsalAc"></div>
+        </div>
+      </div>
 
       <div class="section-divider">Ditambahkan Oleh</div>
       <div class="field"><label>Nama Anda (opsional)</label><input type="text" id="fNama" placeholder="cth: Fuja"></div>
@@ -568,17 +590,29 @@ function compressImage(file, maxWidth=240, quality=0.72){
 }
 
 /* ---------------- Rendering ---------------- */
-function render(){ renderTabs(); renderAsalList(); renderPenulisList(); renderStatusFilter(); renderMain(); }
+function render(){ renderTabs(); renderStatusFilter(); renderMain(); }
 
-function renderAsalList(){
-  const asalValues = Array.from(new Set(books.map(b=>b.asal).filter(Boolean))).sort();
-  document.getElementById('asalList').innerHTML = asalValues.map(a=>`<option value="${escapeHtml(a)}">`).join('');
+/* Komponen autocomplete kustom (menggantikan <datalist> yang tidak stabil di Chrome Android) */
+function setupAutocomplete(inputId, listId, getValues){
+  const input = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  function show(){
+    const term = input.value.trim().toLowerCase();
+    const values = getValues();
+    const matches = term ? values.filter(v=>v.toLowerCase().includes(term)) : values;
+    if(matches.length===0){ list.classList.remove('show'); list.innerHTML=''; return; }
+    list.innerHTML = matches.slice(0,30).map(v=>`<button type="button">${escapeHtml(v)}</button>`).join('');
+    list.querySelectorAll('button').forEach(btn=>{
+      btn.onmousedown = (e)=>{ e.preventDefault(); input.value = btn.textContent; list.classList.remove('show'); };
+    });
+    list.classList.add('show');
+  }
+  input.addEventListener('focus', show);
+  input.addEventListener('input', show);
+  input.addEventListener('blur', ()=> setTimeout(()=> list.classList.remove('show'), 120));
 }
-
-function renderPenulisList(){
-  const penulisValues = Array.from(new Set(books.map(b=>b.penulis).filter(Boolean))).sort();
-  document.getElementById('penulisList').innerHTML = penulisValues.map(p=>`<option value="${escapeHtml(p)}">`).join('');
-}
+setupAutocomplete('fPenulis', 'fPenulisAc', ()=> Array.from(new Set(books.map(b=>b.penulis).filter(Boolean))).sort());
+setupAutocomplete('fAsal', 'fAsalAc', ()=> Array.from(new Set(books.map(b=>b.asal).filter(Boolean))).sort());
 
 function renderTabs(){
   const raks = Array.from(new Set(books.map(b=>b.rak||'Umum'))).sort();
@@ -598,13 +632,14 @@ document.getElementById('rakFilterSelect').onchange = (e)=>{ activeRak = e.targe
 function renderStatusFilter(){
   const wrap = document.getElementById('statusFilter');
   if(!wrap) return;
+  const countFor = (key)=> key==='__semua__' ? books.length : books.filter(b=>b.status===key).length;
   const options = [
     {key:'__semua__', label:'Semua Status'},
     {key:'belum', label:'Belum Dibaca'},
     {key:'sedang', label:'Sedang Dibaca'},
     {key:'selesai', label:'Selesai'},
   ];
-  wrap.innerHTML = options.map(o=>`<button class="shelf-tab status-tab ${activeStatus===o.key?'active':''}" data-status="${o.key}">${o.label}</button>`).join('');
+  wrap.innerHTML = options.map(o=>`<button class="shelf-tab status-tab ${activeStatus===o.key?'active':''}" data-status="${o.key}">${o.label} (${countFor(o.key)})</button>`).join('');
   wrap.querySelectorAll('.status-tab').forEach(btn=>{ btn.onclick = ()=>{ activeStatus = btn.dataset.status; render(); }; });
 }
 
