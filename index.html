@@ -160,9 +160,12 @@
   .btn.danger:hover{background:var(--peach);color:#fff;}
   .btn.small{padding:6px 14px;font-size:12px;}
 
-  .shelf-tabs{display:flex;gap:7px;flex-wrap:wrap;padding:0;}
-  .filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px clamp(16px,4vw,52px) 0;}
+  .shelf-tabs{display:flex;gap:7px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 0;}
+  .shelf-tabs::-webkit-scrollbar{display:none;}
+  .filter-bar{display:flex;flex-direction:column;gap:10px;padding:14px clamp(16px,4vw,52px) 0;}
+  .filter-bar-row{display:flex;gap:10px;align-items:center;}
   .rak-filter-select{
+    flex:1;min-width:0;max-width:230px;
     font-family:var(--font-label);font-size:12.5px;font-weight:600;letter-spacing:0.02em;
     background:var(--card);color:var(--text-deep);border:1px solid var(--blush-2);
     padding:9px 30px 9px 14px;border-radius:999px;appearance:none;-webkit-appearance:none;
@@ -171,6 +174,19 @@
     cursor:pointer;
   }
   .rak-filter-select:focus{outline:none;border-color:var(--pink);}
+  .wishlist-capsule{
+    flex-shrink:0;font-family:var(--font-label);font-size:12.5px;font-weight:600;
+    background:var(--card);color:var(--rosegold-dark);border:1.5px solid var(--rosegold);
+    padding:8.5px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;
+  }
+  .wishlist-capsule.active{background:var(--rosegold);border-color:var(--rosegold);color:#fff;}
+  .dup-warning{
+    font-family:var(--font-label);font-size:11.5px;color:var(--peach-dark, #C97B4E);
+    background:var(--blush);border:1px solid var(--pink);border-radius:8px;
+    padding:6px 10px;margin-top:6px;
+  }
+  .checkbox-label{display:flex;align-items:center;gap:8px;font-family:var(--font-body);font-size:13.5px;color:var(--text-deep);cursor:pointer;}
+  .checkbox-label input{width:16px;height:16px;accent-color:var(--pink);}
   .ac-wrap{position:relative;}
   .ac-list{
     display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
@@ -233,6 +249,7 @@
   .stamp.belum{background:var(--text-muted);}
   .stamp.sedang{background:var(--peach);}
   .stamp.selesai{background:var(--sage);}
+  .stamp.wishlist{background:var(--rosegold);}
   .catalog-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
   .status-row{display:flex;gap:6px;margin-bottom:12px;}
   .status-row button{flex:1;font-family:var(--font-label);font-size:10.5px;padding:8px 4px;border-radius:999px;border:1.5px solid var(--blush-2);background:var(--blush);color:var(--text-soft);}
@@ -327,7 +344,10 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 </header>
 
 <div class="filter-bar">
-  <select id="rakFilterSelect" class="rak-filter-select"></select>
+  <div class="filter-bar-row">
+    <select id="rakFilterSelect" class="rak-filter-select"></select>
+    <button type="button" class="wishlist-capsule" id="wishlistCapsule"></button>
+  </div>
   <div class="shelf-tabs" id="statusFilter"></div>
 </div>
 
@@ -341,14 +361,19 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     <h2 id="formTitle">Tambah Buku</h2>
     <form id="bookForm">
       <input type="hidden" id="bookId">
-      <div class="field"><label>Judul</label><input type="text" id="fJudul" required></div>
+      <div class="field"><label>Judul</label><input type="text" id="fJudul" required>
+        <div class="dup-warning" id="dupWarning" style="display:none;"></div>
+      </div>
       <div class="field"><label>Penulis</label>
         <div class="ac-wrap">
           <input type="text" id="fPenulis" autocomplete="off">
           <div class="ac-list" id="fPenulisAc"></div>
         </div>
       </div>
-      <div class="field-row">
+      <div class="field">
+        <label class="checkbox-label"><input type="checkbox" id="fWishlist"> Tambahkan ke Wishlist (belum dimiliki, tidak masuk hitungan rak)</label>
+      </div>
+      <div class="field-row" id="rakStatusRow">
         <div class="field"><label>Rak</label>
           <select id="fRakSelect"></select>
           <input type="text" id="fRakNew" placeholder="Nama rak baru" style="display:none;margin-top:8px;">
@@ -402,6 +427,7 @@ const STORAGE_KEY = 'books-collection';
 let books = [];
 let activeRak = '__semua__';
 let activeStatus = '__semua__';
+let viewMode = 'koleksi'; // 'koleksi' | 'wishlist'
 let searchTerm = '';
 const SPINE_COLORS = ['var(--pink-dark)','var(--lilac)','var(--sage)','var(--peach)','var(--rosegold)','#C98FA6'];
 
@@ -590,7 +616,46 @@ function compressImage(file, maxWidth=240, quality=0.72){
 }
 
 /* ---------------- Rendering ---------------- */
-function render(){ renderTabs(); renderStatusFilter(); renderMain(); }
+function render(){
+  renderTabs();
+  renderStatusFilter();
+  renderWishlistCapsule();
+  document.getElementById('rakFilterSelect').style.display = viewMode==='wishlist' ? 'none' : '';
+  document.getElementById('statusFilter').style.display = viewMode==='wishlist' ? 'none' : '';
+  renderMain();
+}
+
+function renderWishlistCapsule(){
+  const btn = document.getElementById('wishlistCapsule');
+  const count = books.filter(b=>b.isWishlist).length;
+  btn.textContent = (viewMode==='wishlist' ? '← Koleksi' : '✦ Wishlist') + ` (${count})`;
+  btn.classList.toggle('active', viewMode==='wishlist');
+}
+document.getElementById('wishlistCapsule').onclick = ()=>{
+  viewMode = viewMode==='wishlist' ? 'koleksi' : 'wishlist';
+  render();
+};
+
+function checkDuplicateTitle(){
+  const input = document.getElementById('fJudul');
+  const warn = document.getElementById('dupWarning');
+  const currentId = document.getElementById('bookId').value;
+  const term = input.value.trim().toLowerCase();
+  if(!term){ warn.style.display='none'; return; }
+  const match = books.find(b=> b.id!==currentId && (b.judul||'').trim().toLowerCase()===term);
+  if(match){
+    const where = match.isWishlist ? 'Wishlist' : `Rak: ${match.rak||'Umum'}`;
+    warn.textContent = `⚠️ Sepertinya sudah ada di katalog (${where})`;
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+document.getElementById('fJudul').addEventListener('input', checkDuplicateTitle);
+
+document.getElementById('fWishlist').addEventListener('change', (e)=>{
+  document.getElementById('rakStatusRow').style.display = e.target.checked ? 'none' : 'flex';
+});
 
 /* Komponen autocomplete kustom (menggantikan <datalist> yang tidak stabil di Chrome Android) */
 function setupAutocomplete(inputId, listId, getValues){
@@ -624,11 +689,12 @@ document.getElementById('fHarga').addEventListener('input', (e)=>{
 });
 
 function renderTabs(){
-  const raks = Array.from(new Set(books.map(b=>b.rak||'Umum'))).sort();
+  const owned = books.filter(b=>!b.isWishlist);
+  const raks = Array.from(new Set(owned.map(b=>b.rak||'Umum'))).sort();
   const sel = document.getElementById('rakFilterSelect');
-  let html = `<option value="__semua__">Semua Rak (${books.length})</option>`;
+  let html = `<option value="__semua__">Semua Rak (${owned.length})</option>`;
   raks.forEach(r=>{
-    const count = books.filter(b=>(b.rak||'Umum')===r).length;
+    const count = owned.filter(b=>(b.rak||'Umum')===r).length;
     html += `<option value="${escapeHtml(r)}">${escapeHtml(r)} (${count})</option>`;
   });
   sel.innerHTML = html;
@@ -641,7 +707,8 @@ document.getElementById('rakFilterSelect').onchange = (e)=>{ activeRak = e.targe
 function renderStatusFilter(){
   const wrap = document.getElementById('statusFilter');
   if(!wrap) return;
-  const countFor = (key)=> key==='__semua__' ? books.length : books.filter(b=>b.status===key).length;
+  const owned = books.filter(b=>!b.isWishlist);
+  const countFor = (key)=> key==='__semua__' ? owned.length : owned.filter(b=>b.status===key).length;
   const options = [
     {key:'__semua__', label:'Semua Status'},
     {key:'belum', label:'Belum Dibaca'},
@@ -654,6 +721,7 @@ function renderStatusFilter(){
 
 function filteredBooks(){
   return books.filter(b=>{
+    if(b.isWishlist) return false;
     const matchRak = activeRak==='__semua__' || (b.rak||'Umum')===activeRak;
     const matchStatus = activeStatus==='__semua__' || b.status===activeStatus;
     const term = searchTerm.trim().toLowerCase();
@@ -664,8 +732,15 @@ function filteredBooks(){
 
 function renderMain(){
   const main = document.getElementById('mainArea');
+
+  if(viewMode==='wishlist'){
+    renderWishlistView(main);
+    return;
+  }
+
+  const ownedCount = books.filter(b=>!b.isWishlist).length;
   const list = filteredBooks();
-  if(books.length===0){
+  if(ownedCount===0){
     main.innerHTML = `<div class="empty-state"><div class="frame"></div><h3>Rak masih kosong</h3><p>Tambahkan buku pertama untuk mulai mengisi katalog Anda.</p><button class="btn solid" onclick="document.getElementById('btnTambah').click()">+ Tambah Buku Pertama</button></div>`;
     return;
   }
@@ -694,14 +769,39 @@ function renderMain(){
   main.querySelectorAll('.add-spine').forEach(el=>{ el.onclick = ()=> openForm(null, el.dataset.rak); });
 }
 
+function renderWishlistView(main){
+  const term = searchTerm.trim().toLowerCase();
+  const items = books.filter(b=>b.isWishlist).filter(b=>
+    !term || (b.judul||'').toLowerCase().includes(term) || (b.penulis||'').toLowerCase().includes(term)
+  );
+  if(items.length===0){
+    main.innerHTML = `<div class="empty-state"><div class="frame"></div><h3>Wishlist masih kosong</h3><p>Simpan buku yang ingin Anda miliki di sini — tidak masuk hitungan rak sampai Anda tandai sudah dibeli.</p><button class="btn solid" id="btnTambahWishlist">+ Tambah ke Wishlist</button></div>`;
+    document.getElementById('btnTambahWishlist').onclick = ()=> openForm(null, null, true);
+    return;
+  }
+  main.innerHTML = `<div class="rak">
+    <div class="rak-label">Wishlist <span class="count">(${items.length})</span></div>
+    <div class="shelf-strip">
+      <div class="spines">
+        ${items.map(spineHtml).join('')}
+        <button class="add-spine" id="addWishlistSpine" title="Tambah ke wishlist">+</button>
+      </div>
+      <div class="shelf-ledge"></div>
+    </div>
+  </div>`;
+  main.querySelectorAll('.spine').forEach(el=>{ el.onclick = ()=> openDetail(el.dataset.id); });
+  document.getElementById('addWishlistSpine').onclick = ()=> openForm(null, null, true);
+}
+
 function spineHtml(b){
   const color = spineColorFor(b.id);
   const coverImg = b.coverDataUrl ? `<img class="spine-cover" src="${b.coverDataUrl}">` : '';
   const who = b.addedBy ? `<span class="who-tag">${escapeHtml(b.addedBy)}</span>` : '';
+  const marker = b.isWishlist ? '' : `<div class="spine-dot ${b.status}"></div>`;
   return `<div class="spine" style="background:${color}" data-id="${b.id}" title="${escapeHtml(b.judul)}">
     ${coverImg}
     <div class="spine-title">${escapeHtml(b.judul)}</div>
-    <div class="spine-dot ${b.status}"></div>
+    ${marker}
     ${who}
   </div>`;
 }
@@ -712,10 +812,20 @@ function openDetail(id){
   if(!b) return;
   const card = document.getElementById('catalogCard');
   const tanggal = formatTanggal(b.tanggalPerolehan);
+  const statusBlock = b.isWishlist
+    ? `<div class="stamp wishlist">WISHLIST</div>`
+    : `<div class="stamp ${b.status}">${statusLabel(b.status).toUpperCase()}</div>`;
+  const statusRowBlock = b.isWishlist ? '' : `
+    <div class="status-row">
+      <button data-s="belum" class="${b.status==='belum'?'active':''}">Belum</button>
+      <button data-s="sedang" class="${b.status==='sedang'?'active':''}">Sedang</button>
+      <button data-s="selesai" class="${b.status==='selesai'?'active':''}">Selesai</button>
+    </div>`;
+  const eyebrow = b.isWishlist ? 'Wishlist' : 'Kartu Katalog &middot; ' + escapeHtml(b.rak||'Umum');
   card.innerHTML = `
     <button class="modal-close" id="closeDetail">&times;</button>
     ${b.coverDataUrl ? `<div class="cover-frame"><div class="bow"></div><img src="${b.coverDataUrl}"></div>` : ''}
-    <div class="kartu-eyebrow">Kartu Katalog &middot; ${escapeHtml(b.rak||'Umum')}${b.addedBy? ' &middot; oleh '+escapeHtml(b.addedBy):''}</div>
+    <div class="kartu-eyebrow">${eyebrow}${b.addedBy? ' &middot; oleh '+escapeHtml(b.addedBy):''}</div>
     <h2>${escapeHtml(b.judul)}</h2>
     <p class="penulis">${b.penulis? escapeHtml(b.penulis) : 'Penulis tidak diketahui'}</p>
     <div class="catalog-meta">
@@ -724,14 +834,11 @@ function openDetail(id){
       ${b.asal? `<span class="k">Asal</span><span>${escapeHtml(b.asal)}</span>` : ''}
       ${tanggal? `<span class="k">Diperoleh</span><span>${tanggal}</span>` : ''}
     </div>
-    <div class="stamp ${b.status}">${statusLabel(b.status).toUpperCase()}</div>
+    ${statusBlock}
     ${b.catatan? `<div class="catatan-box">${escapeHtml(b.catatan)}</div>` : ''}
-    <div class="status-row">
-      <button data-s="belum" class="${b.status==='belum'?'active':''}">Belum</button>
-      <button data-s="sedang" class="${b.status==='sedang'?'active':''}">Sedang</button>
-      <button data-s="selesai" class="${b.status==='selesai'?'active':''}">Selesai</button>
-    </div>
+    ${statusRowBlock}
     <div class="catalog-actions">
+      ${b.isWishlist? `<button class="btn solid small" id="btnBeli">Tandai Sudah Dibeli</button>` : ''}
       <button class="btn ghost small" id="btnEdit">Edit</button>
       <button class="btn danger small" id="btnHapus">Hapus</button>
     </div>
@@ -745,6 +852,14 @@ function openDetail(id){
       render(); openDetail(id);
     };
   });
+  const btnBeli = document.getElementById('btnBeli');
+  if(btnBeli) btnBeli.onclick = ()=>{
+    document.getElementById('overlayDetail').classList.remove('show');
+    openForm(b);
+    document.getElementById('fWishlist').checked = false;
+    document.getElementById('rakStatusRow').style.display = 'flex';
+    populateRakSelect('Umum');
+  };
   document.getElementById('btnEdit').onclick = ()=>{ document.getElementById('overlayDetail').classList.remove('show'); openForm(b); };
   document.getElementById('btnHapus').onclick = async ()=>{
     if(confirm(`Hapus "${b.judul}" dari katalog?`)){
@@ -762,7 +877,7 @@ let pendingCoverDataUrl = null;
 function populateRakSelect(selectedValue){
   const sel = document.getElementById('fRakSelect');
   const newInput = document.getElementById('fRakNew');
-  let raks = Array.from(new Set(books.map(b=>b.rak||'Umum'))).sort();
+  let raks = Array.from(new Set(books.filter(b=>!b.isWishlist).map(b=>b.rak||'Umum'))).sort();
   if(raks.length===0) raks = ['Umum'];
   const val = selectedValue || 'Umum';
   const isKnown = raks.includes(val);
@@ -787,12 +902,16 @@ document.getElementById('fRakSelect').onchange = (e)=>{
   if(e.target.value === '__baru__') newInput.focus();
 };
 
-function openForm(book, presetRak){
+function openForm(book, presetRak, presetWishlist){
   pendingCoverDataUrl = null;
   document.getElementById('formTitle').textContent = book? 'Edit Buku' : 'Tambah Buku';
   document.getElementById('bookId').value = book? book.id : '';
   document.getElementById('fJudul').value = book? book.judul : '';
+  checkDuplicateTitle();
   document.getElementById('fPenulis').value = book? (book.penulis||'') : '';
+  const wishlistOn = book? !!book.isWishlist : !!presetWishlist;
+  document.getElementById('fWishlist').checked = wishlistOn;
+  document.getElementById('rakStatusRow').style.display = wishlistOn ? 'none' : 'flex';
   populateRakSelect(book? (book.rak||'Umum') : (presetRak||'Umum'));
   document.getElementById('fStatus').value = book? book.status : 'belum';
   document.getElementById('fCatatan').value = book? (book.catatan||'') : '';
@@ -813,7 +932,7 @@ function openForm(book, presetRak){
 }
 
 
-document.getElementById('btnTambah').onclick = ()=> openForm(null);
+document.getElementById('btnTambah').onclick = ()=> openForm(null, null, viewMode==='wishlist');
 document.getElementById('closeForm').onclick = ()=> document.getElementById('overlayForm').classList.remove('show');
 document.getElementById('cancelForm').onclick = ()=> document.getElementById('overlayForm').classList.remove('show');
 
@@ -834,16 +953,18 @@ document.getElementById('bookForm').onsubmit = async (e)=>{
   e.preventDefault();
   const id = document.getElementById('bookId').value || uid();
   const existing = books.find(b=>b.id===id);
+  const isWishlist = document.getElementById('fWishlist').checked;
   const rakSelectVal = document.getElementById('fRakSelect').value;
-  const finalRak = rakSelectVal==='__baru__'
+  const finalRak = isWishlist ? '' : (rakSelectVal==='__baru__'
     ? (document.getElementById('fRakNew').value.trim() || 'Umum')
-    : rakSelectVal;
+    : rakSelectVal);
   const book = {
     id,
     judul: document.getElementById('fJudul').value.trim() || 'Tanpa Judul',
     penulis: document.getElementById('fPenulis').value.trim(),
     rak: finalRak,
-    status: document.getElementById('fStatus').value,
+    status: isWishlist ? 'belum' : document.getElementById('fStatus').value,
+    isWishlist,
     catatan: document.getElementById('fCatatan').value.trim(),
     harga: document.getElementById('fHarga').value.trim(),
     asal: document.getElementById('fAsal').value.trim(),
@@ -860,7 +981,7 @@ document.getElementById('bookForm').onsubmit = async (e)=>{
   const ok = await saveBooks();
   document.getElementById('overlayForm').classList.remove('show');
   render();
-  if(ok) showToast(existing? 'Perubahan disimpan' : 'Buku ditambahkan ke rak');
+  if(ok) showToast(existing? 'Perubahan disimpan' : (isWishlist ? 'Ditambahkan ke wishlist' : 'Buku ditambahkan ke rak'));
 };
 
 document.getElementById('searchInput').oninput = (e)=>{ searchTerm = e.target.value; renderMain(); };
