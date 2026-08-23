@@ -127,18 +127,42 @@
   ::selection{background:var(--pink);color:#fff;}
 
   header{
-    padding:30px clamp(16px,4vw,52px) 10px;
-    display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;
+    padding:26px clamp(16px,4vw,52px) 14px;
+    display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
     position:relative;
   }
-  .brand{display:flex;flex-direction:column;gap:2px;}
+  .hamburger-btn{
+    position:absolute;top:24px;left:clamp(16px,4vw,52px);
+    width:38px;height:38px;border-radius:50%;border:1.5px solid var(--blush-2);
+    background:var(--card);display:flex;align-items:center;justify-content:center;
+    color:var(--text-deep);cursor:pointer;flex-shrink:0;
+  }
+  .hamburger-btn:hover{border-color:var(--pink);color:var(--pink-dark);}
+  .hamburger-btn svg{width:18px;height:18px;}
+  .brand{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .brand-illustration{margin-bottom:2px;}
   .brand .eyebrow{font-family:var(--font-script);font-size:22px;color:var(--pink-dark);line-height:1;}
   .brand h1{font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4vw,36px);margin:2px 0 0;letter-spacing:0.01em;color:var(--text-deep);}
   .shared-note{font-family:var(--font-label);font-size:11.5px;color:var(--text-muted);margin-top:4px;}
   .flourish{width:100%;height:16px;margin-top:14px;opacity:0.65;}
 
-  .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;}
   .search-slot{position:relative;display:flex;align-items:center;}
+
+  .side-overlay{justify-content:flex-start;background:rgba(92,50,71,0.35);}
+  .side-panel{
+    background:var(--card);height:100%;width:min(78vw,290px);max-width:290px;
+    border-radius:0 22px 22px 0;padding:26px 20px;position:relative;
+    box-shadow:0 0 40px rgba(92,50,71,0.25);overflow-y:auto;
+  }
+  .side-panel-title{font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--text-deep);margin:0 0 16px;}
+  .side-nav-item{
+    display:block;width:100%;text-align:left;background:transparent;border:none;
+    font-family:var(--font-label);font-size:14px;font-weight:600;color:var(--text-soft);
+    padding:13px 12px;border-radius:12px;margin-bottom:4px;cursor:pointer;line-height:1.3;
+  }
+  .side-nav-item:hover{background:var(--blush);}
+  .side-nav-item.active{background:var(--pink);color:#fff;}
   .search-slot input{
     font-family:var(--font-label);font-size:13px;background:var(--card);
     border:1.5px solid var(--blush-2);color:var(--text-deep);
@@ -174,6 +198,9 @@
     cursor:pointer;
   }
   .rak-filter-select:focus{outline:none;border-color:var(--pink);}
+  .view-toggle{display:flex;background:var(--card);border:1px solid var(--blush-2);border-radius:999px;padding:3px;width:fit-content;}
+  .vt-btn{font-family:var(--font-label);font-size:11.5px;font-weight:600;padding:6px 14px;border-radius:999px;border:none;background:transparent;color:var(--text-soft);cursor:pointer;}
+  .vt-btn.active{background:var(--pink);color:#fff;}
   .wishlist-capsule{
     flex-shrink:0;font-family:var(--font-label);font-size:12.5px;font-weight:600;
     background:var(--card);color:var(--rosegold-dark);border:1.5px solid var(--rosegold);
@@ -187,6 +214,30 @@
   }
   .checkbox-label{display:flex;align-items:center;gap:8px;font-family:var(--font-body);font-size:13.5px;color:var(--text-deep);cursor:pointer;}
   .checkbox-label input{width:16px;height:16px;accent-color:var(--pink);}
+  .star-rate{display:flex;gap:4px;font-size:24px;line-height:1;}
+  .star-rate span{color:var(--blush-2);cursor:pointer;transition:color .1s;}
+  .star-rate span.filled{color:var(--rosegold);}
+  .progress-bar-wrap{background:var(--blush-2);border-radius:999px;height:8px;overflow:hidden;margin:4px 0 2px;}
+  .progress-bar-fill{height:100%;background:linear-gradient(90deg, var(--pink), var(--rosegold));border-radius:999px;}
+  .stat-page{padding:22px clamp(16px,4vw,52px) 60px;max-width:560px;margin:0 auto;}
+  .stat-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
+  .stat-card{flex:1;min-width:120px;background:var(--card);border-radius:16px;padding:18px 14px;text-align:center;box-shadow:0 6px 20px rgba(215,140,160,0.14);}
+  .stat-card.wide{flex-basis:100%;}
+  .stat-num{font-family:var(--font-display);font-weight:700;font-size:24px;color:var(--pink-dark);}
+  .stat-cap{font-family:var(--font-label);font-size:11.5px;color:var(--text-soft);margin-top:4px;}
+  .stat-block{background:var(--card);border-radius:16px;padding:18px 16px;margin-bottom:16px;box-shadow:0 6px 20px rgba(215,140,160,0.1);}
+  .stat-block-title{font-family:var(--font-label);font-size:12px;letter-spacing:0.05em;text-transform:uppercase;color:var(--rosegold-dark);margin-bottom:12px;}
+  .stat-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;}
+  .stat-label{width:110px;flex-shrink:0;color:var(--text-deep);font-family:var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .stat-bar-wrap{flex:1;height:8px;background:var(--blush);border-radius:999px;overflow:hidden;}
+  .stat-bar-fill{height:100%;border-radius:999px;}
+  .stat-count{font-family:var(--font-label);font-size:12px;color:var(--text-soft);min-width:20px;text-align:right;}
+  .stat-empty{color:var(--text-muted);font-size:13px;}
+  .lend-list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px dashed var(--blush-2);}
+  .lend-list-row:last-child{border-bottom:none;}
+  .lend-list-info{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--text-soft);}
+  .lend-list-info strong{font-family:var(--font-display);font-size:14.5px;color:var(--text-deep);}
+  .progress-label{font-family:var(--font-label);font-size:11px;color:var(--text-soft);display:flex;justify-content:space-between;}
   .ac-wrap{position:relative;}
   .ac-list{
     display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
@@ -221,8 +272,39 @@
   .spine .spine-dot.selesai{background:#CDE3B8;}
   .add-spine{flex:0 0 auto;width:42px;height:156px;border:2px dashed var(--blush-2);border-radius:12px 12px 4px 4px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:20px;background:var(--blush);}
   .add-spine:hover{border-color:var(--pink);color:var(--pink-dark);}
+  .lend-flag{position:absolute;top:6px;right:4px;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.9);color:var(--rosegold-dark);font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700;}
 
   .who-tag{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-family:var(--font-label);font-size:8px;color:rgba(255,255,255,0.7);white-space:nowrap;}
+
+  /* Grid view */
+  .grid-wrap{display:grid;grid-template-columns:repeat(auto-fill, minmax(110px,1fr));gap:14px;background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:0 6px 24px rgba(215,140,160,0.14);}
+  .grid-card{cursor:pointer;display:flex;flex-direction:column;gap:6px;}
+  .grid-cover{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.15);}
+  .grid-cover-blank{display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-size:28px;font-weight:700;}
+  .grid-card-title{font-family:var(--font-display);font-weight:700;font-size:12.5px;color:var(--text-deep);line-height:1.3;}
+  .grid-card-meta{font-family:var(--font-label);font-size:10.5px;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between;gap:4px;}
+  .add-grid-card{border:2px dashed var(--blush-2);border-radius:10px;background:var(--blush);color:var(--text-muted);font-family:var(--font-label);font-size:11.5px;font-weight:600;min-height:120px;cursor:pointer;}
+  .add-grid-card:hover{border-color:var(--pink);color:var(--pink-dark);}
+
+  /* List view */
+  .list-wrap{display:flex;flex-direction:column;gap:8px;background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:0 6px 24px rgba(215,140,160,0.14);}
+  .list-row{display:flex;align-items:center;gap:12px;padding:8px;border-radius:12px;cursor:pointer;}
+  .list-row:hover{background:var(--blush);}
+  .list-cover{width:38px;height:52px;object-fit:cover;border-radius:6px;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.15);}
+  .list-cover-blank{width:38px;height:52px;border-radius:6px;flex-shrink:0;}
+  .list-row-info{flex:1;min-width:0;}
+  .list-row-title{font-family:var(--font-display);font-weight:700;font-size:13.5px;color:var(--text-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .list-row-sub{font-family:var(--font-label);font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .list-row-tags{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+  .list-badge{font-family:var(--font-label);font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff;white-space:nowrap;}
+  .list-badge.belum{background:var(--text-muted);}
+  .list-badge.sedang{background:var(--peach);}
+  .list-badge.selesai{background:var(--sage);}
+  .list-badge.wishlist{background:var(--rosegold);}
+  .list-badge.lend{background:var(--lilac);}
+  .list-price{font-family:var(--font-label);font-size:10.5px;color:var(--text-soft);}
+  .add-list-row{border:2px dashed var(--blush-2);border-radius:12px;background:var(--blush);color:var(--text-muted);font-family:var(--font-label);font-size:12px;font-weight:600;padding:10px;cursor:pointer;}
+  .add-list-row:hover{border-color:var(--pink);color:var(--pink-dark);}
 
   .empty-state{text-align:center;padding:64px 20px;color:var(--text-soft);}
   .empty-state .frame{width:64px;height:88px;margin:0 auto 16px;border:2px dashed var(--pink);border-radius:16px;opacity:0.5;}
@@ -245,6 +327,8 @@
   .catalog-meta{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-family:var(--font-label);font-size:12px;color:var(--text-soft);border-top:1.5px dashed var(--blush-2);border-bottom:1.5px dashed var(--blush-2);padding:12px 0;margin-bottom:14px;}
   .catalog-meta .k{color:var(--text-muted);}
   .catatan-box{font-size:13.5px;line-height:1.65;color:var(--text-deep);margin-bottom:16px;white-space:pre-wrap;background:var(--blush);padding:10px 12px;border-radius:10px;}
+  .lend-box{background:var(--blush-2);border:1px dashed var(--rosegold);}
+  .lend-book-title{font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--pink-dark);margin:0 0 16px;text-align:center;}
   .stamp{display:block;width:fit-content;margin:0 auto 18px;font-family:var(--font-label);font-weight:600;font-size:11px;letter-spacing:0.06em;padding:7px 16px;border-radius:999px;color:#fff;}
   .stamp.belum{background:var(--text-muted);}
   .stamp.sedang{background:var(--peach);}
@@ -319,10 +403,29 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 <body>
 
 <header>
+  <button class="hamburger-btn" id="btnMenu" aria-label="Buka menu" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+  </button>
   <div class="brand">
+    <svg class="brand-illustration" width="72" height="54" viewBox="0 0 72 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M36 12 C30 8 18 6 8 8 L8 44 C18 42 30 44 36 48 C42 44 54 42 64 44 L64 8 C54 6 42 8 36 12 Z" stroke="#B37F6E" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+      <path d="M36 12 L36 48" stroke="#B37F6E" stroke-width="1.3"/>
+      <path d="M20 16 Q26 14 32 17" stroke="#E79BB0" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M20 24 Q26 22 32 25" stroke="#E79BB0" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M20 32 Q26 30 32 33" stroke="#E79BB0" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M40 17 Q46 14 52 16" stroke="#E79BB0" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M40 25 Q46 22 52 24" stroke="#E79BB0" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M40 33 Q46 30 52 32" stroke="#E79BB0" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <g>
+        <circle cx="36" cy="4" r="2.2" fill="#E79BB0"/>
+        <circle cx="31" cy="6" r="1.8" fill="#CE9F8F"/>
+        <circle cx="41" cy="6" r="1.8" fill="#CE9F8F"/>
+        <circle cx="33.5" cy="1.5" r="1.6" fill="#C9AEDB"/>
+        <circle cx="38.5" cy="1.5" r="1.6" fill="#C9AEDB"/>
+      </g>
+    </svg>
     <span class="eyebrow">koleksi kesayangan</span>
     <h1>Perpustakaan Saya</h1>
-    
   </div>
   <div class="header-actions">
     <div class="search-slot">
@@ -343,12 +446,29 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
   </div>
 </header>
 
+<!-- Panel menu (hamburger) -->
+<div class="overlay side-overlay" id="overlaySide">
+  <div class="side-panel" id="sidePanel">
+    <button class="modal-close" id="closeSide">&times;</button>
+    <div class="side-panel-title">Menu</div>
+    <button class="side-nav-item active" data-page="dashboard">🏠 Dashboard</button>
+    <button class="side-nav-item" data-page="statistik">📊 Statistik &amp; Jurnal Baca</button>
+    <button class="side-nav-item" data-page="keuangan">💰 Laporan Keuangan</button>
+    <button class="side-nav-item" data-page="peminjaman">🤝 Peminjaman Buku</button>
+  </div>
+</div>
+
 <div class="filter-bar">
   <div class="filter-bar-row">
     <select id="rakFilterSelect" class="rak-filter-select"></select>
     <button type="button" class="wishlist-capsule" id="wishlistCapsule"></button>
   </div>
   <div class="shelf-tabs" id="statusFilter"></div>
+  <div class="view-toggle" id="viewToggle">
+    <button type="button" class="vt-btn active" data-v="spine">Rak</button>
+    <button type="button" class="vt-btn" data-v="grid">Grid</button>
+    <button type="button" class="vt-btn" data-v="list">List</button>
+  </div>
 </div>
 
 <main id="mainArea"><div class="loading-state">Memuat koleksi...</div></main>
@@ -386,6 +506,10 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
           </select>
         </div>
       </div>
+      <div class="field-row" id="halamanRow">
+        <div class="field"><label>Halaman Saat Ini</label><input type="number" min="0" id="fHalamanSaatIni" placeholder="cth: 45"></div>
+        <div class="field"><label>Total Halaman</label><input type="number" min="0" id="fTotalHalaman" placeholder="cth: 300"></div>
+      </div>
       <div class="field">
         <label>Sampul Buku (opsional)</label>
         <div class="filedrop" id="coverDrop">
@@ -395,6 +519,15 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
         <input type="file" id="fCover" accept="image/*" style="display:none">
       </div>
       <div class="field"><label>Catatan</label><textarea id="fCatatan" placeholder="Catatan tentang buku ini..."></textarea></div>
+
+      <div class="section-divider">Jurnal Baca</div>
+      <div class="field"><label>Rating</label>
+        <div class="star-rate" id="starRate" data-value="0">
+          <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+        </div>
+      </div>
+      <div class="field"><label>Ulasan Singkat</label><textarea id="fUlasan" placeholder="Bagaimana pendapat Anda tentang buku ini?"></textarea></div>
+      <div class="field"><label>Kutipan Favorit</label><textarea id="fKutipan" placeholder="Kutipan yang berkesan dari buku ini..."></textarea></div>
 
       <div class="section-divider">Sumber Perolehan</div>
       <div class="field-row">
@@ -420,6 +553,25 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
   </div>
 </div>
 
+<div class="overlay" id="overlayLending">
+  <div class="modal form-modal">
+    <button class="modal-close" id="closeLending">&times;</button>
+    <h2>Tandai Dipinjamkan</h2>
+    <p class="lend-book-title" id="lendBookTitle"></p>
+    <form id="lendingForm">
+      <div class="field"><label>Nama Peminjam</label><input type="text" id="lendPeminjam" required placeholder="cth: Rani"></div>
+      <div class="field-row">
+        <div class="field"><label>Tanggal Pinjam</label><input type="date" id="lendTanggalPinjam"></div>
+        <div class="field"><label>Estimasi Kembali</label><input type="date" id="lendEstimasiKembali"></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn ghost" id="cancelLending">Batal</button>
+        <button type="submit" class="btn solid">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -428,6 +580,8 @@ let books = [];
 let activeRak = '__semua__';
 let activeStatus = '__semua__';
 let viewMode = 'koleksi'; // 'koleksi' | 'wishlist'
+let viewStyle = 'spine'; // 'spine' | 'grid' | 'list'
+let currentPage = 'dashboard'; // 'dashboard' | 'statistik' | 'keuangan' | 'peminjaman'
 let searchTerm = '';
 const SPINE_COLORS = ['var(--pink-dark)','var(--lilac)','var(--sage)','var(--peach)','var(--rosegold)','#C98FA6'];
 
@@ -447,7 +601,7 @@ function showToast(msg){
 
 /* ---------------- Local storage (IndexedDB) ---------------- */
 const DB_NAME = 'katalog-buku-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let db;
 function openDB(){
   return new Promise((resolve,reject)=>{
@@ -455,6 +609,7 @@ function openDB(){
     req.onupgradeneeded = (e)=>{
       const _db = e.target.result;
       if(!_db.objectStoreNames.contains('books')) _db.createObjectStore('books',{keyPath:'id'});
+      if(!_db.objectStoreNames.contains('settings')) _db.createObjectStore('settings',{keyPath:'id'});
     };
     req.onsuccess = (e)=>{ db = e.target.result; resolve(db); };
     req.onerror = (e)=> reject(e);
@@ -478,11 +633,31 @@ function dbPutAll(list){
     tx.onerror = (e)=> reject(e);
   });
 }
+function dbGetSettings(){
+  return new Promise((resolve)=>{
+    try{
+      const req = db.transaction('settings','readonly').objectStore('settings').get('main');
+      req.onsuccess = ()=> resolve(req.result || {id:'main', targetTahunan: 12});
+      req.onerror = ()=> resolve({id:'main', targetTahunan: 12});
+    }catch(e){ resolve({id:'main', targetTahunan: 12}); }
+  });
+}
+function dbPutSettings(obj){
+  return new Promise((resolve)=>{
+    try{
+      const req = db.transaction('settings','readwrite').objectStore('settings').put({...obj, id:'main'});
+      req.onsuccess = ()=> resolve(true);
+      req.onerror = ()=> resolve(false);
+    }catch(e){ resolve(false); }
+  });
+}
+let settings = {id:'main', targetTahunan: 12};
 
 async function loadBooks(){
   try{
     await openDB();
     books = await dbGetAll();
+    settings = await dbGetSettings();
   }catch(e){
     books = [];
   }
@@ -617,11 +792,16 @@ function compressImage(file, maxWidth=240, quality=0.72){
 
 /* ---------------- Rendering ---------------- */
 function render(){
-  renderTabs();
-  renderStatusFilter();
-  renderWishlistCapsule();
-  document.getElementById('rakFilterSelect').style.display = viewMode==='wishlist' ? 'none' : '';
-  document.getElementById('statusFilter').style.display = viewMode==='wishlist' ? 'none' : '';
+  const onDashboard = currentPage==='dashboard';
+  document.querySelector('.filter-bar').style.display = onDashboard ? 'flex' : 'none';
+  if(onDashboard){
+    renderTabs();
+    renderStatusFilter();
+    renderWishlistCapsule();
+    document.getElementById('rakFilterSelect').style.display = viewMode==='wishlist' ? 'none' : '';
+    document.getElementById('statusFilter').style.display = viewMode==='wishlist' ? 'none' : '';
+    document.getElementById('viewToggle').style.display = '';
+  }
   renderMain();
 }
 
@@ -635,6 +815,13 @@ document.getElementById('wishlistCapsule').onclick = ()=>{
   viewMode = viewMode==='wishlist' ? 'koleksi' : 'wishlist';
   render();
 };
+document.querySelectorAll('.vt-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    viewStyle = btn.dataset.v;
+    document.querySelectorAll('.vt-btn').forEach(b=> b.classList.toggle('active', b===btn));
+    renderMain();
+  };
+});
 
 function checkDuplicateTitle(){
   const input = document.getElementById('fJudul');
@@ -655,6 +842,17 @@ document.getElementById('fJudul').addEventListener('input', checkDuplicateTitle)
 
 document.getElementById('fWishlist').addEventListener('change', (e)=>{
   document.getElementById('rakStatusRow').style.display = e.target.checked ? 'none' : 'flex';
+  document.getElementById('halamanRow').style.display = e.target.checked ? 'none' : 'flex';
+});
+
+/* Rating bintang */
+function setStarRate(val){
+  const wrap = document.getElementById('starRate');
+  wrap.dataset.value = val;
+  wrap.querySelectorAll('span').forEach(s=> s.classList.toggle('filled', +s.dataset.v <= val));
+}
+document.querySelectorAll('#starRate span').forEach(s=>{
+  s.onclick = ()=> setStarRate(+s.dataset.v === +document.getElementById('starRate').dataset.value ? 0 : +s.dataset.v);
 });
 
 /* Komponen autocomplete kustom (menggantikan <datalist> yang tidak stabil di Chrome Android) */
@@ -733,6 +931,10 @@ function filteredBooks(){
 function renderMain(){
   const main = document.getElementById('mainArea');
 
+  if(currentPage==='statistik'){ renderStatistikPage(main); return; }
+  if(currentPage==='keuangan'){ renderKeuanganPage(main); return; }
+  if(currentPage==='peminjaman'){ renderPeminjamanPage(main); return; }
+
   if(viewMode==='wishlist'){
     renderWishlistView(main);
     return;
@@ -752,21 +954,47 @@ function renderMain(){
   list.forEach(b=>{ const r=b.rak||'Umum'; (groups[r]=groups[r]||[]).push(b); });
   let html = '';
   Object.keys(groups).sort().forEach(rak=>{
-    const items = groups[rak];
-    html += `<div class="rak">
-      <div class="rak-label">${escapeHtml(rak)} <span class="count">(${items.length})</span></div>
-      <div class="shelf-strip">
-        <div class="spines">
-          ${items.map(spineHtml).join('')}
-          <button class="add-spine" data-rak="${escapeHtml(rak)}" title="Tambah buku ke rak ini">+</button>
-        </div>
-        <div class="shelf-ledge"></div>
-      </div>
-    </div>`;
+    html += groupSectionHtml(rak, groups[rak], true);
   });
   main.innerHTML = html;
-  main.querySelectorAll('.spine').forEach(el=>{ el.onclick = ()=> openDetail(el.dataset.id); });
-  main.querySelectorAll('.add-spine').forEach(el=>{ el.onclick = ()=> openForm(null, el.dataset.rak); });
+  wireItemInteractions(main);
+}
+
+function groupSectionHtml(rakLabel, items, showAddBtn){
+  const addBtnHtml = showAddBtn ? `<button class="add-spine" data-rak="${escapeHtml(rakLabel)}" title="Tambah buku ke rak ini">+</button>` : '';
+  if(viewStyle==='grid'){
+    return `<div class="rak">
+      <div class="rak-label">${escapeHtml(rakLabel)} <span class="count">(${items.length})</span></div>
+      <div class="grid-wrap">
+        ${items.map(gridCardHtml).join('')}
+        ${showAddBtn ? `<button class="add-grid-card" data-rak="${escapeHtml(rakLabel)}" title="Tambah buku ke rak ini">+ Tambah</button>` : ''}
+      </div>
+    </div>`;
+  }
+  if(viewStyle==='list'){
+    return `<div class="rak">
+      <div class="rak-label">${escapeHtml(rakLabel)} <span class="count">(${items.length})</span></div>
+      <div class="list-wrap">
+        ${items.map(listRowHtml).join('')}
+        ${showAddBtn ? `<button class="add-list-row" data-rak="${escapeHtml(rakLabel)}">+ Tambah buku ke rak ini</button>` : ''}
+      </div>
+    </div>`;
+  }
+  return `<div class="rak">
+    <div class="rak-label">${escapeHtml(rakLabel)} <span class="count">(${items.length})</span></div>
+    <div class="shelf-strip">
+      <div class="spines">
+        ${items.map(spineHtml).join('')}
+        ${addBtnHtml}
+      </div>
+      <div class="shelf-ledge"></div>
+    </div>
+  </div>`;
+}
+
+function wireItemInteractions(main){
+  main.querySelectorAll('.spine, .grid-card, .list-row').forEach(el=>{ el.onclick = ()=> openDetail(el.dataset.id); });
+  main.querySelectorAll('.add-spine, .add-grid-card, .add-list-row').forEach(el=>{ el.onclick = ()=> openForm(null, el.dataset.rak); });
 }
 
 function renderWishlistView(main){
@@ -779,17 +1007,14 @@ function renderWishlistView(main){
     document.getElementById('btnTambahWishlist').onclick = ()=> openForm(null, null, true);
     return;
   }
-  main.innerHTML = `<div class="rak">
-    <div class="rak-label">Wishlist <span class="count">(${items.length})</span></div>
-    <div class="shelf-strip">
-      <div class="spines">
-        ${items.map(spineHtml).join('')}
-        <button class="add-spine" id="addWishlistSpine" title="Tambah ke wishlist">+</button>
-      </div>
-      <div class="shelf-ledge"></div>
-    </div>
-  </div>`;
-  main.querySelectorAll('.spine').forEach(el=>{ el.onclick = ()=> openDetail(el.dataset.id); });
+  main.innerHTML = groupSectionHtml('Wishlist', items, false);
+  const addBtn = document.createElement('button');
+  main.querySelector(viewStyle==='grid' ? '.grid-wrap' : viewStyle==='list' ? '.list-wrap' : '.spines').insertAdjacentHTML('beforeend',
+    viewStyle==='grid' ? `<button class="add-grid-card" id="addWishlistSpine">+ Tambah</button>`
+    : viewStyle==='list' ? `<button class="add-list-row" id="addWishlistSpine">+ Tambah ke wishlist</button>`
+    : `<button class="add-spine" id="addWishlistSpine" title="Tambah ke wishlist">+</button>`
+  );
+  wireItemInteractions(main);
   document.getElementById('addWishlistSpine').onclick = ()=> openForm(null, null, true);
 }
 
@@ -798,12 +1023,162 @@ function spineHtml(b){
   const coverImg = b.coverDataUrl ? `<img class="spine-cover" src="${b.coverDataUrl}">` : '';
   const who = b.addedBy ? `<span class="who-tag">${escapeHtml(b.addedBy)}</span>` : '';
   const marker = b.isWishlist ? '' : `<div class="spine-dot ${b.status}"></div>`;
+  const lendMark = b.dipinjamkan ? `<div class="lend-flag" title="Sedang dipinjamkan">↪</div>` : '';
   return `<div class="spine" style="background:${color}" data-id="${b.id}" title="${escapeHtml(b.judul)}">
     ${coverImg}
     <div class="spine-title">${escapeHtml(b.judul)}</div>
     ${marker}
     ${who}
+    ${lendMark}
   </div>`;
+}
+
+function gridCardHtml(b){
+  const color = spineColorFor(b.id);
+  const cover = b.coverDataUrl
+    ? `<img class="grid-cover" src="${b.coverDataUrl}">`
+    : `<div class="grid-cover grid-cover-blank" style="background:${color}">${escapeHtml((b.judul||'?').slice(0,1).toUpperCase())}</div>`;
+  const statusDot = b.isWishlist ? '' : `<span class="spine-dot ${b.status}"></span>`;
+  return `<div class="grid-card" data-id="${b.id}">
+    ${cover}
+    <div class="grid-card-title">${escapeHtml(b.judul)}</div>
+    <div class="grid-card-meta">${b.penulis? escapeHtml(b.penulis) : '&nbsp;'} ${statusDot}</div>
+  </div>`;
+}
+
+function listRowHtml(b){
+  const color = spineColorFor(b.id);
+  const cover = b.coverDataUrl
+    ? `<img class="list-cover" src="${b.coverDataUrl}">`
+    : `<div class="list-cover list-cover-blank" style="background:${color}"></div>`;
+  const badge = b.isWishlist ? `<span class="list-badge wishlist">Wishlist</span>` : `<span class="list-badge ${b.status}">${statusLabel(b.status)}</span>`;
+  const lend = b.dipinjamkan ? `<span class="list-badge lend">Dipinjamkan</span>` : '';
+  return `<div class="list-row" data-id="${b.id}">
+    ${cover}
+    <div class="list-row-info">
+      <div class="list-row-title">${escapeHtml(b.judul)}</div>
+      <div class="list-row-sub">${b.penulis? escapeHtml(b.penulis):'Penulis tidak diketahui'} ${b.rak? '&middot; '+escapeHtml(b.rak):''}</div>
+    </div>
+    <div class="list-row-tags">${badge}${lend}${b.harga? `<span class="list-price">${escapeHtml(b.harga)}</span>`:''}</div>
+  </div>`;
+}
+
+/* ---------------- Halaman: Statistik & Jurnal Baca ---------------- */
+function renderStatistikPage(main){
+  const owned = books.filter(b=>!b.isWishlist);
+  const wishlistCount = books.filter(b=>b.isWishlist).length;
+  const belum = owned.filter(b=>b.status==='belum').length;
+  const sedang = owned.filter(b=>b.status==='sedang').length;
+  const selesai = owned.filter(b=>b.status==='selesai').length;
+  const total = owned.length || 1;
+  const rakCounts = {};
+  owned.forEach(b=>{ const r=b.rak||'Umum'; rakCounts[r]=(rakCounts[r]||0)+1; });
+  const topRaks = Object.entries(rakCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  const bar = (label, count, color)=>`
+    <div class="stat-row">
+      <span class="stat-label">${escapeHtml(label)}</span>
+      <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${(count/total*100).toFixed(0)}%;background:${color}"></div></div>
+      <span class="stat-count">${count}</span>
+    </div>`;
+
+  main.innerHTML = `
+    <div class="stat-page">
+      <div class="stat-cards">
+        <div class="stat-card"><div class="stat-num">${owned.length}</div><div class="stat-cap">Total Koleksi</div></div>
+        <div class="stat-card"><div class="stat-num">${selesai}</div><div class="stat-cap">Selesai Dibaca</div></div>
+        <div class="stat-card"><div class="stat-num">${wishlistCount}</div><div class="stat-cap">Wishlist</div></div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-block-title">Status Bacaan</div>
+        ${bar('Belum Dibaca', belum, 'var(--text-muted)')}
+        ${bar('Sedang Dibaca', sedang, 'var(--peach)')}
+        ${bar('Selesai', selesai, 'var(--sage)')}
+      </div>
+      <div class="stat-block">
+        <div class="stat-block-title">Rak Terpadat</div>
+        ${topRaks.length? topRaks.map(([r,c])=>bar(r,c,'var(--pink)')).join('') : '<p class="stat-empty">Belum ada data rak.</p>'}
+      </div>
+    </div>`;
+}
+
+/* ---------------- Halaman: Laporan Keuangan ---------------- */
+function renderKeuanganPage(main){
+  const owned = books.filter(b=>!b.isWishlist);
+  const parseHarga = (h)=>{
+    if(!h) return 0;
+    const digits = String(h).replace(/[^0-9]/g,'');
+    return digits ? parseInt(digits,10) : 0;
+  };
+  const withHarga = owned.map(b=>({...b, hargaNum: parseHarga(b.harga)})).filter(b=>b.hargaNum>0);
+  const totalSpent = withHarga.reduce((s,b)=>s+b.hargaNum,0);
+  const byAsal = {};
+  withHarga.forEach(b=>{ const a=b.asal||'Tidak diketahui'; byAsal[a]=(byAsal[a]||0)+b.hargaNum; });
+  const asalRows = Object.entries(byAsal).sort((a,b)=>b[1]-a[1]);
+  const sorted = withHarga.sort((a,b)=> b.addedAt-a.addedAt);
+  const fmtRp = (n)=> 'Rp ' + n.toLocaleString('id-ID');
+
+  main.innerHTML = `
+    <div class="stat-page">
+      <div class="stat-cards">
+        <div class="stat-card wide"><div class="stat-num">${fmtRp(totalSpent)}</div><div class="stat-cap">Total Pengeluaran Tercatat</div></div>
+        <div class="stat-card"><div class="stat-num">${withHarga.length}</div><div class="stat-cap">Buku Berharga Tercatat</div></div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-block-title">Berdasarkan Asal/Sumber</div>
+        ${asalRows.length? asalRows.map(([a,total])=>`
+          <div class="stat-row"><span class="stat-label">${escapeHtml(a)}</span><span class="stat-count" style="margin-left:auto;">${fmtRp(total)}</span></div>
+        `).join('') : '<p class="stat-empty">Belum ada data harga.</p>'}
+      </div>
+      <div class="stat-block">
+        <div class="stat-block-title">Riwayat Perolehan</div>
+        ${sorted.length? sorted.slice(0,20).map(b=>`
+          <div class="stat-row"><span class="stat-label">${escapeHtml(b.judul)}</span><span class="stat-count" style="margin-left:auto;">${fmtRp(b.hargaNum)}</span></div>
+        `).join('') : '<p class="stat-empty">Belum ada catatan harga buku.</p>'}
+      </div>
+    </div>`;
+}
+
+/* ---------------- Halaman: Peminjaman Buku ---------------- */
+function renderPeminjamanPage(main){
+  const dipinjam = books.filter(b=>!b.isWishlist && b.dipinjamkan);
+  if(dipinjam.length===0){
+    main.innerHTML = `
+      <div class="empty-state">
+        <div class="frame"></div>
+        <h3>Tidak ada buku yang dipinjamkan</h3>
+        <p>Saat Anda menandai buku "Dipinjamkan" dari kartu detailnya, daftarnya akan muncul di sini beserta nama peminjam dan estimasi kembali.</p>
+      </div>`;
+    return;
+  }
+  main.innerHTML = `
+    <div class="stat-page">
+      <div class="stat-block">
+        <div class="stat-block-title">Sedang Dipinjamkan (${dipinjam.length})</div>
+        ${dipinjam.map(b=>`
+          <div class="lend-list-row" data-id="${b.id}">
+            <div class="lend-list-info">
+              <strong>${escapeHtml(b.judul)}</strong>
+              <span>Dipinjam: ${escapeHtml(b.peminjamNama||'-')}</span>
+              ${b.tanggalPinjam? `<span>Tgl pinjam: ${formatTanggal(b.tanggalPinjam)}</span>` : ''}
+              ${b.estimasiKembali? `<span>Estimasi kembali: ${formatTanggal(b.estimasiKembali)}</span>` : ''}
+            </div>
+            <button class="btn ghost small btn-kembali-list">Sudah Kembali</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  main.querySelectorAll('.btn-kembali-list').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = btn.closest('.lend-list-row').dataset.id;
+      const b = books.find(x=>x.id===id);
+      if(!b) return;
+      b.dipinjamkan = false; b.peminjamNama=''; b.tanggalPinjam=''; b.estimasiKembali='';
+      await saveBooks();
+      render();
+      showToast('Buku ditandai sudah kembali');
+    };
+  });
 }
 
 /* ---------------- Detail modal ---------------- */
@@ -822,12 +1197,34 @@ function openDetail(id){
       <button data-s="selesai" class="${b.status==='selesai'?'active':''}">Selesai</button>
     </div>`;
   const eyebrow = b.isWishlist ? 'Wishlist' : 'Kartu Katalog &middot; ' + escapeHtml(b.rak||'Umum');
+
+  const hal = +b.halamanSaatIni || 0;
+  const totalHal = +b.totalHalaman || 0;
+  const pct = totalHal>0 ? Math.min(100, Math.round(hal/totalHal*100)) : 0;
+  const progressBlock = (!b.isWishlist && totalHal>0) ? `
+    <div class="progress-label"><span>Halaman ${hal} dari ${totalHal}</span><span>${pct}%</span></div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+  ` : '';
+
+  const ratingBlock = b.rating ? `<div class="detail-stars">${'★'.repeat(b.rating)}${'☆'.repeat(5-b.rating)}</div>` : '';
+  const ulasanBlock = b.ulasan ? `<div class="catatan-box"><strong>Ulasan:</strong> ${escapeHtml(b.ulasan)}</div>` : '';
+  const kutipanBlock = b.kutipan ? `<div class="catatan-box quote-box">&ldquo;${escapeHtml(b.kutipan)}&rdquo;</div>` : '';
+
+  const lendBlock = b.dipinjamkan ? `
+    <div class="catatan-box lend-box">
+      <strong>Sedang dipinjamkan</strong><br>
+      Peminjam: ${escapeHtml(b.peminjamNama||'-')}<br>
+      ${b.tanggalPinjam? 'Tgl pinjam: '+formatTanggal(b.tanggalPinjam)+'<br>' : ''}
+      ${b.estimasiKembali? 'Estimasi kembali: '+formatTanggal(b.estimasiKembali) : ''}
+    </div>` : '';
+
   card.innerHTML = `
     <button class="modal-close" id="closeDetail">&times;</button>
     ${b.coverDataUrl ? `<div class="cover-frame"><div class="bow"></div><img src="${b.coverDataUrl}"></div>` : ''}
     <div class="kartu-eyebrow">${eyebrow}${b.addedBy? ' &middot; oleh '+escapeHtml(b.addedBy):''}</div>
     <h2>${escapeHtml(b.judul)}</h2>
     <p class="penulis">${b.penulis? escapeHtml(b.penulis) : 'Penulis tidak diketahui'}</p>
+    ${ratingBlock}
     <div class="catalog-meta">
       <span class="k">Ditambahkan</span><span>${new Date(b.addedAt).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
       ${b.harga? `<span class="k">Harga</span><span>${escapeHtml(b.harga)}</span>` : ''}
@@ -835,10 +1232,16 @@ function openDetail(id){
       ${tanggal? `<span class="k">Diperoleh</span><span>${tanggal}</span>` : ''}
     </div>
     ${statusBlock}
+    ${progressBlock}
     ${b.catatan? `<div class="catatan-box">${escapeHtml(b.catatan)}</div>` : ''}
+    ${ulasanBlock}
+    ${kutipanBlock}
+    ${lendBlock}
     ${statusRowBlock}
     <div class="catalog-actions">
       ${b.isWishlist? `<button class="btn solid small" id="btnBeli">Tandai Sudah Dibeli</button>` : ''}
+      ${(!b.isWishlist && !b.dipinjamkan)? `<button class="btn ghost small" id="btnPinjamkan">Tandai Dipinjamkan</button>` : ''}
+      ${(!b.isWishlist && b.dipinjamkan)? `<button class="btn ghost small" id="btnKembali">Tandai Dikembalikan</button>` : ''}
       <button class="btn ghost small" id="btnEdit">Edit</button>
       <button class="btn danger small" id="btnHapus">Hapus</button>
     </div>
@@ -858,7 +1261,17 @@ function openDetail(id){
     openForm(b);
     document.getElementById('fWishlist').checked = false;
     document.getElementById('rakStatusRow').style.display = 'flex';
+    document.getElementById('halamanRow').style.display = 'flex';
     populateRakSelect('Umum');
+  };
+  const btnPinjamkan = document.getElementById('btnPinjamkan');
+  if(btnPinjamkan) btnPinjamkan.onclick = ()=> openLendingForm(b);
+  const btnKembali = document.getElementById('btnKembali');
+  if(btnKembali) btnKembali.onclick = async ()=>{
+    b.dipinjamkan = false; b.peminjamNama=''; b.tanggalPinjam=''; b.estimasiKembali='';
+    await saveBooks();
+    render(); openDetail(id);
+    showToast('Buku ditandai sudah kembali');
   };
   document.getElementById('btnEdit').onclick = ()=>{ document.getElementById('overlayDetail').classList.remove('show'); openForm(b); };
   document.getElementById('btnHapus').onclick = async ()=>{
@@ -870,6 +1283,30 @@ function openDetail(id){
     }
   };
 }
+
+/* ---------------- Peminjaman (lending) mini-form ---------------- */
+function openLendingForm(book){
+  document.getElementById('overlayDetail').classList.remove('show');
+  document.getElementById('lendBookTitle').textContent = book.judul;
+  document.getElementById('lendPeminjam').value = '';
+  document.getElementById('lendTanggalPinjam').value = new Date().toISOString().slice(0,10);
+  document.getElementById('lendEstimasiKembali').value = '';
+  document.getElementById('overlayLending').classList.add('show');
+  document.getElementById('lendingForm').onsubmit = async (e)=>{
+    e.preventDefault();
+    book.dipinjamkan = true;
+    book.peminjamNama = document.getElementById('lendPeminjam').value.trim();
+    book.tanggalPinjam = document.getElementById('lendTanggalPinjam').value;
+    book.estimasiKembali = document.getElementById('lendEstimasiKembali').value;
+    await saveBooks();
+    document.getElementById('overlayLending').classList.remove('show');
+    render();
+    showToast('Ditandai sedang dipinjamkan');
+  };
+}
+document.getElementById('closeLending').onclick = ()=> document.getElementById('overlayLending').classList.remove('show');
+document.getElementById('cancelLending').onclick = ()=> document.getElementById('overlayLending').classList.remove('show');
+document.getElementById('overlayLending').addEventListener('click', (e)=>{ if(e.target.id==='overlayLending') e.target.classList.remove('show'); });
 
 /* ---------------- Form modal ---------------- */
 let pendingCoverDataUrl = null;
@@ -912,9 +1349,15 @@ function openForm(book, presetRak, presetWishlist){
   const wishlistOn = book? !!book.isWishlist : !!presetWishlist;
   document.getElementById('fWishlist').checked = wishlistOn;
   document.getElementById('rakStatusRow').style.display = wishlistOn ? 'none' : 'flex';
+  document.getElementById('halamanRow').style.display = wishlistOn ? 'none' : 'flex';
   populateRakSelect(book? (book.rak||'Umum') : (presetRak||'Umum'));
   document.getElementById('fStatus').value = book? book.status : 'belum';
+  document.getElementById('fHalamanSaatIni').value = book? (book.halamanSaatIni||'') : '';
+  document.getElementById('fTotalHalaman').value = book? (book.totalHalaman||'') : '';
   document.getElementById('fCatatan').value = book? (book.catatan||'') : '';
+  setStarRate(book? (book.rating||0) : 0);
+  document.getElementById('fUlasan').value = book? (book.ulasan||'') : '';
+  document.getElementById('fKutipan').value = book? (book.kutipan||'') : '';
   document.getElementById('fHarga').value = book? (book.harga||'') : '';
   document.getElementById('fAsal').value = book? (book.asal||'') : '';
   document.getElementById('fTanggal').value = book? (book.tanggalPerolehan||'') : '';
@@ -965,13 +1408,22 @@ document.getElementById('bookForm').onsubmit = async (e)=>{
     rak: finalRak,
     status: isWishlist ? 'belum' : document.getElementById('fStatus').value,
     isWishlist,
+    halamanSaatIni: isWishlist ? '' : document.getElementById('fHalamanSaatIni').value,
+    totalHalaman: isWishlist ? '' : document.getElementById('fTotalHalaman').value,
     catatan: document.getElementById('fCatatan').value.trim(),
+    rating: +document.getElementById('starRate').dataset.value || 0,
+    ulasan: document.getElementById('fUlasan').value.trim(),
+    kutipan: document.getElementById('fKutipan').value.trim(),
     harga: document.getElementById('fHarga').value.trim(),
     asal: document.getElementById('fAsal').value.trim(),
     tanggalPerolehan: document.getElementById('fTanggal').value,
     addedBy: document.getElementById('fNama').value.trim(),
     addedAt: existing? existing.addedAt : Date.now(),
     coverDataUrl: existing? existing.coverDataUrl : null,
+    dipinjamkan: existing? !!existing.dipinjamkan : false,
+    peminjamNama: existing? (existing.peminjamNama||'') : '',
+    tanggalPinjam: existing? (existing.tanggalPinjam||'') : '',
+    estimasiKembali: existing? (existing.estimasiKembali||'') : '',
   };
   if(pendingCoverDataUrl) book.coverDataUrl = pendingCoverDataUrl;
 
@@ -1010,6 +1462,19 @@ document.getElementById('importFile').onchange = (e)=>{
 };
 document.getElementById('overlayDetail').addEventListener('click', (e)=>{ if(e.target.id==='overlayDetail') e.target.classList.remove('show'); });
 document.getElementById('overlayForm').addEventListener('click', (e)=>{ if(e.target.id==='overlayForm') e.target.classList.remove('show'); });
+
+/* ---------------- Hamburger menu & navigasi halaman ---------------- */
+document.getElementById('btnMenu').onclick = ()=> document.getElementById('overlaySide').classList.add('show');
+document.getElementById('closeSide').onclick = ()=> document.getElementById('overlaySide').classList.remove('show');
+document.getElementById('overlaySide').addEventListener('click', (e)=>{ if(e.target.id==='overlaySide') e.target.classList.remove('show'); });
+document.querySelectorAll('.side-nav-item').forEach(btn=>{
+  btn.onclick = ()=>{
+    currentPage = btn.dataset.page;
+    document.querySelectorAll('.side-nav-item').forEach(b=> b.classList.toggle('active', b===btn));
+    document.getElementById('overlaySide').classList.remove('show');
+    render();
+  };
+});
 
 /* ---------------- Service worker (aktif jika diakses lewat http/https, mis. server lokal) ---------------- */
 function registerOfflineSW(){
