@@ -187,7 +187,7 @@
   .shelf-tabs{display:flex;gap:7px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 0;}
   .shelf-tabs::-webkit-scrollbar{display:none;}
   .filter-bar{display:flex;flex-direction:column;gap:10px;padding:14px clamp(16px,4vw,52px) 0;}
-  .filter-bar-row{display:flex;gap:10px;align-items:center;}
+  .filter-bar-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .rak-filter-select{
     flex:1;min-width:0;max-width:230px;
     font-family:var(--font-label);font-size:12.5px;font-weight:600;letter-spacing:0.02em;
@@ -198,8 +198,9 @@
     cursor:pointer;
   }
   .rak-filter-select:focus{outline:none;border-color:var(--pink);}
-  .view-toggle{display:flex;background:var(--card);border:1px solid var(--blush-2);border-radius:999px;padding:3px;width:fit-content;}
-  .vt-btn{font-family:var(--font-label);font-size:11.5px;font-weight:600;padding:6px 14px;border-radius:999px;border:none;background:transparent;color:var(--text-soft);cursor:pointer;}
+  .view-toggle{display:flex;flex-shrink:0;background:var(--card);border:1px solid var(--blush-2);border-radius:999px;padding:3px;gap:2px;}
+  .vt-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border-radius:999px;border:none;background:transparent;color:var(--text-soft);cursor:pointer;}
+  .vt-btn svg{width:15px;height:15px;}
   .vt-btn.active{background:var(--pink);color:#fff;}
   .wishlist-capsule{
     flex-shrink:0;font-family:var(--font-label);font-size:12.5px;font-weight:600;
@@ -237,6 +238,18 @@
   .lend-list-row:last-child{border-bottom:none;}
   .lend-list-info{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--text-soft);}
   .lend-list-info strong{font-family:var(--font-display);font-size:14.5px;color:var(--text-deep);}
+  .detail-stars{text-align:center;color:var(--rosegold);font-size:16px;letter-spacing:2px;margin-bottom:10px;}
+  .quote-box{font-family:var(--font-display);font-style:italic;text-align:center;color:var(--pink-dark);}
+  .journal-entry{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 6px 20px rgba(215,140,160,0.12);cursor:pointer;}
+  .journal-entry-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;}
+  .journal-cover{width:42px;height:58px;border-radius:6px;object-fit:cover;box-shadow:0 4px 10px rgba(58,36,48,0.25);flex-shrink:0;}
+  .journal-cover-blank{}
+  .journal-meta{display:flex;flex-direction:column;gap:2px;}
+  .journal-meta strong{font-family:var(--font-display);font-size:15px;color:var(--text-deep);}
+  .journal-author{font-size:12px;color:var(--text-soft);font-style:italic;}
+  .journal-meta .detail-stars{text-align:left;margin:2px 0 0;font-size:13px;}
+  .journal-text{font-size:13.5px;line-height:1.6;color:var(--text-deep);margin:0 0 8px;}
+  .journal-quote{font-family:var(--font-display);font-style:italic;font-size:13.5px;color:var(--pink-dark);margin:0;padding-left:10px;border-left:2px solid var(--rosegold);}
   .progress-label{font-family:var(--font-label);font-size:11px;color:var(--text-soft);display:flex;justify-content:space-between;}
   .ac-wrap{position:relative;}
   .ac-list{
@@ -424,10 +437,10 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
         <circle cx="38.5" cy="1.5" r="1.6" fill="#C9AEDB"/>
       </g>
     </svg>
-    <span class="eyebrow">koleksi kesayangan</span>
-    <h1>Perpustakaan Saya</h1>
+    <span class="eyebrow" id="headerEyebrow">koleksi kesayangan</span>
+    <h1 id="headerTitle">Perpustakaan Saya</h1>
   </div>
-  <div class="header-actions">
+  <div class="header-actions" id="headerActions">
     <div class="search-slot">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="searchInput" placeholder="Cari judul/penulis...">
@@ -452,7 +465,8 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     <button class="modal-close" id="closeSide">&times;</button>
     <div class="side-panel-title">Menu</div>
     <button class="side-nav-item active" data-page="dashboard">🏠 Dashboard</button>
-    <button class="side-nav-item" data-page="statistik">📊 Statistik &amp; Jurnal Baca</button>
+    <button class="side-nav-item" data-page="statistik">📊 Statistik</button>
+    <button class="side-nav-item" data-page="jurnal">📖 Jurnal Baca</button>
     <button class="side-nav-item" data-page="keuangan">💰 Laporan Keuangan</button>
     <button class="side-nav-item" data-page="peminjaman">🤝 Peminjaman Buku</button>
   </div>
@@ -461,14 +475,20 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 <div class="filter-bar">
   <div class="filter-bar-row">
     <select id="rakFilterSelect" class="rak-filter-select"></select>
+    <div class="view-toggle" id="viewToggle">
+      <button type="button" class="vt-btn active" data-v="spine" title="Tampilan Rak" aria-label="Tampilan Rak">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="3.5" height="14" rx="1"/><rect x="8.25" y="3" width="3.5" height="14" rx="1"/><rect x="13.5" y="3" width="3.5" height="14" rx="1"/></svg>
+      </button>
+      <button type="button" class="vt-btn" data-v="grid" title="Tampilan Grid" aria-label="Tampilan Grid">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>
+      </button>
+      <button type="button" class="vt-btn" data-v="list" title="Tampilan List" aria-label="Tampilan List">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>
+      </button>
+    </div>
     <button type="button" class="wishlist-capsule" id="wishlistCapsule"></button>
   </div>
   <div class="shelf-tabs" id="statusFilter"></div>
-  <div class="view-toggle" id="viewToggle">
-    <button type="button" class="vt-btn active" data-v="spine">Rak</button>
-    <button type="button" class="vt-btn" data-v="grid">Grid</button>
-    <button type="button" class="vt-btn" data-v="list">List</button>
-  </div>
 </div>
 
 <main id="mainArea"><div class="loading-state">Memuat koleksi...</div></main>
@@ -791,8 +811,20 @@ function compressImage(file, maxWidth=240, quality=0.72){
 }
 
 /* ---------------- Rendering ---------------- */
+const PAGE_META = {
+  dashboard: {eyebrow:'koleksi kesayangan', title:'Perpustakaan Saya'},
+  statistik: {eyebrow:'ringkasan koleksi', title:'Statistik'},
+  jurnal: {eyebrow:'catatan & kesan', title:'Jurnal Baca'},
+  keuangan: {eyebrow:'catatan pengeluaran', title:'Laporan Keuangan'},
+  peminjaman: {eyebrow:'sedang di tangan orang lain', title:'Peminjaman Buku'},
+};
+
 function render(){
   const onDashboard = currentPage==='dashboard';
+  const meta = PAGE_META[currentPage] || PAGE_META.dashboard;
+  document.getElementById('headerEyebrow').textContent = meta.eyebrow;
+  document.getElementById('headerTitle').textContent = meta.title;
+  document.getElementById('headerActions').style.display = onDashboard ? '' : 'none';
   document.querySelector('.filter-bar').style.display = onDashboard ? 'flex' : 'none';
   if(onDashboard){
     renderTabs();
@@ -932,6 +964,7 @@ function renderMain(){
   const main = document.getElementById('mainArea');
 
   if(currentPage==='statistik'){ renderStatistikPage(main); return; }
+  if(currentPage==='jurnal'){ renderJurnalPage(main); return; }
   if(currentPage==='keuangan'){ renderKeuanganPage(main); return; }
   if(currentPage==='peminjaman'){ renderPeminjamanPage(main); return; }
 
@@ -1104,39 +1137,102 @@ function renderStatistikPage(main){
 
 /* ---------------- Halaman: Laporan Keuangan ---------------- */
 function renderKeuanganPage(main){
-  const owned = books.filter(b=>!b.isWishlist);
   const parseHarga = (h)=>{
     if(!h) return 0;
     const digits = String(h).replace(/[^0-9]/g,'');
     return digits ? parseInt(digits,10) : 0;
   };
+  const fmtRp = (n)=> 'Rp ' + n.toLocaleString('id-ID');
+
+  const owned = books.filter(b=>!b.isWishlist);
   const withHarga = owned.map(b=>({...b, hargaNum: parseHarga(b.harga)})).filter(b=>b.hargaNum>0);
   const totalSpent = withHarga.reduce((s,b)=>s+b.hargaNum,0);
+
   const byAsal = {};
   withHarga.forEach(b=>{ const a=b.asal||'Tidak diketahui'; byAsal[a]=(byAsal[a]||0)+b.hargaNum; });
   const asalRows = Object.entries(byAsal).sort((a,b)=>b[1]-a[1]);
-  const sorted = withHarga.sort((a,b)=> b.addedAt-a.addedAt);
-  const fmtRp = (n)=> 'Rp ' + n.toLocaleString('id-ID');
+
+  const recent = withHarga.slice().sort((a,b)=> b.addedAt-a.addedAt).slice(0,6);
+
+  const wishlist = books.filter(b=>b.isWishlist).map(b=>({...b, hargaNum: parseHarga(b.harga)}));
+  const wishlistWithHarga = wishlist.filter(b=>b.hargaNum>0);
+  const wishlistTotal = wishlistWithHarga.reduce((s,b)=>s+b.hargaNum,0);
+  const wishlistNoHarga = wishlist.length - wishlistWithHarga.length;
 
   main.innerHTML = `
     <div class="stat-page">
       <div class="stat-cards">
-        <div class="stat-card wide"><div class="stat-num">${fmtRp(totalSpent)}</div><div class="stat-cap">Total Pengeluaran Tercatat</div></div>
-        <div class="stat-card"><div class="stat-num">${withHarga.length}</div><div class="stat-cap">Buku Berharga Tercatat</div></div>
+        <div class="stat-card wide"><div class="stat-num">${fmtRp(totalSpent)}</div><div class="stat-cap">Total Pengeluaran Tercatat (${withHarga.length} buku)</div></div>
       </div>
+
       <div class="stat-block">
         <div class="stat-block-title">Berdasarkan Asal/Sumber</div>
         ${asalRows.length? asalRows.map(([a,total])=>`
           <div class="stat-row"><span class="stat-label">${escapeHtml(a)}</span><span class="stat-count" style="margin-left:auto;">${fmtRp(total)}</span></div>
         `).join('') : '<p class="stat-empty">Belum ada data harga.</p>'}
       </div>
+
       <div class="stat-block">
-        <div class="stat-block-title">Riwayat Perolehan</div>
-        ${sorted.length? sorted.slice(0,20).map(b=>`
-          <div class="stat-row"><span class="stat-label">${escapeHtml(b.judul)}</span><span class="stat-count" style="margin-left:auto;">${fmtRp(b.hargaNum)}</span></div>
+        <div class="stat-block-title">Perolehan Terbaru</div>
+        ${recent.length? recent.map(b=>`
+          <div class="lend-list-row">
+            <div class="lend-list-info">
+              <strong>${escapeHtml(b.judul)}</strong>
+              <span>${b.tanggalPerolehan? formatTanggal(b.tanggalPerolehan) : new Date(b.addedAt).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
+            </div>
+            <span class="stat-count">${fmtRp(b.hargaNum)}</span>
+          </div>
         `).join('') : '<p class="stat-empty">Belum ada catatan harga buku.</p>'}
+        ${withHarga.length>6 ? `<p class="stat-empty" style="margin-top:8px;">+${withHarga.length-6} perolehan lainnya</p>` : ''}
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-block-title">Estimasi Biaya Wishlist</div>
+        <div class="stat-cards" style="margin-bottom:14px;">
+          <div class="stat-card"><div class="stat-num">${fmtRp(wishlistTotal)}</div><div class="stat-cap">Estimasi Total</div></div>
+          <div class="stat-card"><div class="stat-num">${wishlist.length}</div><div class="stat-cap">Buku di Wishlist</div></div>
+        </div>
+        ${wishlistWithHarga.length? wishlistWithHarga.map(b=>`
+          <div class="stat-row"><span class="stat-label">${escapeHtml(b.judul)}</span><span class="stat-count" style="margin-left:auto;">${fmtRp(b.hargaNum)}</span></div>
+        `).join('') : '<p class="stat-empty">Belum ada harga yang dicatat di wishlist.</p>'}
+        ${wishlistNoHarga>0? `<p class="stat-empty" style="margin-top:6px;">${wishlistNoHarga} buku wishlist belum diberi perkiraan harga.</p>` : ''}
       </div>
     </div>`;
+}
+
+/* ---------------- Halaman: Jurnal Baca ---------------- */
+function renderJurnalPage(main){
+  const entries = books.filter(b=> !b.isWishlist && (b.rating>0 || (b.ulasan&&b.ulasan.trim()) || (b.kutipan&&b.kutipan.trim())));
+  if(entries.length===0){
+    main.innerHTML = `
+      <div class="empty-state">
+        <div class="frame"></div>
+        <h3>Jurnal masih kosong</h3>
+        <p>Tambahkan rating, ulasan, atau kutipan favorit lewat Edit buku untuk mulai mengisi jurnal baca Anda.</p>
+      </div>`;
+    return;
+  }
+  const sorted = entries.slice().sort((a,b)=> b.addedAt-a.addedAt);
+  main.innerHTML = `
+    <div class="stat-page">
+      ${sorted.map((b,i)=>`
+        <div class="journal-entry" data-id="${b.id}">
+          <div class="journal-entry-head">
+            ${b.coverDataUrl? `<img src="${b.coverDataUrl}" class="journal-cover">` : `<div class="journal-cover journal-cover-blank" style="background:${spineColorFor(b.id)}"></div>`}
+            <div class="journal-meta">
+              <strong>${escapeHtml(b.judul)}</strong>
+              <span class="journal-author">${b.penulis? escapeHtml(b.penulis) : 'Penulis tidak diketahui'}</span>
+              ${b.rating? `<div class="detail-stars">${'★'.repeat(b.rating)}${'☆'.repeat(5-b.rating)}</div>` : ''}
+            </div>
+          </div>
+          ${b.ulasan? `<p class="journal-text">${escapeHtml(b.ulasan)}</p>` : ''}
+          ${b.kutipan? `<p class="journal-quote">&ldquo;${escapeHtml(b.kutipan)}&rdquo;</p>` : ''}
+        </div>
+      `).join('')}
+    </div>`;
+  main.querySelectorAll('.journal-entry').forEach(el=>{
+    el.onclick = ()=> openDetail(el.dataset.id);
+  });
 }
 
 /* ---------------- Halaman: Peminjaman Buku ---------------- */
