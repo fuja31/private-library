@@ -250,6 +250,13 @@
   .journal-meta .detail-stars{text-align:left;margin:2px 0 0;font-size:13px;}
   .journal-text{font-size:13.5px;line-height:1.6;color:var(--text-deep);margin:0 0 8px;}
   .journal-quote{font-family:var(--font-display);font-style:italic;font-size:13.5px;color:var(--pink-dark);margin:0;padding-left:10px;border-left:2px solid var(--rosegold);}
+  .journal-text p, .journal-quote p{margin:0 0 6px;}
+  .journal-text p:last-child, .journal-quote p:last-child{margin-bottom:0;}
+  .journal-text ul, .journal-quote ul{margin:0 0 6px;padding-left:18px;}
+  .journal-toolbar{display:flex;justify-content:flex-end;margin-bottom:16px;}
+  .journal-date{margin-left:auto;font-family:var(--font-label);font-size:10.5px;color:var(--text-muted);white-space:nowrap;}
+  .journal-notebook-link{display:inline-flex;align-items:center;gap:5px;background:var(--blush);color:var(--pink-dark);border:1px solid var(--pink);border-radius:999px;padding:6px 13px;font-family:var(--font-label);font-size:12px;font-weight:600;cursor:pointer;}
+  .journal-notebook-link svg{width:13px;height:13px;}
   .progress-label{font-family:var(--font-label);font-size:11px;color:var(--text-soft);display:flex;justify-content:space-between;}
   .ac-wrap{position:relative;}
   .ac-list{
@@ -356,11 +363,26 @@
   .form-modal h2{font-family:var(--font-display);font-size:21px;margin:0 0 16px;color:var(--text-deep);}
   .field{margin-bottom:13px;}
   .field label{display:block;font-family:var(--font-label);font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-soft);margin-bottom:5px;}
-  .field input[type=text], .field input[type=date], .field textarea, .field select{width:100%;padding:10px 13px;border:1.5px solid var(--blush-2);border-radius:12px;background:#fff;font-family:var(--font-body);font-size:13.5px;color:var(--text-deep);}
+  .field input[type=text], .field input[type=date], .field input[type=number], .field textarea, .field select{width:100%;padding:10px 13px;border:1.5px solid var(--blush-2);border-radius:12px;background:#fff;font-family:var(--font-body);font-size:13.5px;color:var(--text-deep);box-sizing:border-box;min-width:0;}
+  .field-row .field{flex:1;min-width:0;}
   .field input:focus, .field textarea:focus, .field select:focus{outline:none;border-color:var(--pink);}
   .field textarea{resize:vertical;min-height:56px;}
+  .rt-toolbar{display:flex;gap:4px;margin-bottom:6px;}
+  .rt-toolbar button{
+    width:28px;height:28px;border-radius:8px;border:1px solid var(--blush-2);background:var(--card);
+    color:var(--text-deep);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .rt-toolbar button:hover{background:var(--blush);border-color:var(--pink);}
+  .rt-editable{
+    min-height:110px;width:100%;padding:10px 13px;border:1.5px solid var(--blush-2);border-radius:12px;
+    background:#fff;font-family:var(--font-body);font-size:13.5px;color:var(--text-deep);
+    box-sizing:border-box;outline:none;overflow-y:auto;
+  }
+  .rt-editable:focus{border-color:var(--pink);}
+  .rt-editable:empty:before{content:attr(data-placeholder);color:var(--text-muted);}
+  .rt-editable p{margin:0 0 6px;}
+  .rt-editable ul{margin:0 0 6px;padding-left:18px;}
   .field-row{display:flex;gap:10px;}
-  .field-row .field{flex:1;}
   .filedrop{border:1.5px dashed var(--rosegold);border-radius:12px;padding:14px;text-align:center;font-size:12.5px;color:var(--text-soft);cursor:pointer;background:var(--blush);}
   .filedrop.has-file{border-style:solid;border-color:var(--pink);color:var(--text-deep);}
   .cover-preview{display:flex;align-items:center;gap:10px;}
@@ -540,15 +562,6 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       </div>
       <div class="field"><label>Catatan</label><textarea id="fCatatan" placeholder="Catatan tentang buku ini..."></textarea></div>
 
-      <div class="section-divider">Jurnal Baca</div>
-      <div class="field"><label>Rating</label>
-        <div class="star-rate" id="starRate" data-value="0">
-          <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
-        </div>
-      </div>
-      <div class="field"><label>Ulasan Singkat</label><textarea id="fUlasan" placeholder="Bagaimana pendapat Anda tentang buku ini?"></textarea></div>
-      <div class="field"><label>Kutipan Favorit</label><textarea id="fKutipan" placeholder="Kutipan yang berkesan dari buku ini..."></textarea></div>
-
       <div class="section-divider">Sumber Perolehan</div>
       <div class="field-row">
         <div class="field"><label>Harga</label><input type="text" id="fHarga" placeholder="cth: 85.000 atau Gratis"></div>
@@ -592,16 +605,64 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
   </div>
 </div>
 
+<div class="overlay" id="overlayJournal">
+  <div class="modal form-modal">
+    <button class="modal-close" id="closeJournal">&times;</button>
+    <h2 id="journalFormTitle">Catatan Baru</h2>
+    <form id="journalForm">
+      <input type="hidden" id="jEntryId">
+      <div class="field"><label>Pilih Buku dari Koleksi (opsional)</label>
+        <select id="jBookSelect"><option value="">— Tidak dipilih —</option></select>
+      </div>
+      <div class="field">
+        <label class="checkbox-label"><input type="checkbox" id="jManualToggle"> Buku ini belum ada di katalog (isi manual)</label>
+      </div>
+      <div id="jManualFields" style="display:none;">
+        <div class="field"><label>Judul Buku</label><input type="text" id="jManualJudul" placeholder="Judul buku"></div>
+        <div class="field"><label>Penulis</label><input type="text" id="jManualPenulis" placeholder="Nama penulis"></div>
+      </div>
+      <div class="field"><label>Tanggal Catatan</label><input type="date" id="jTanggal"></div>
+      <div class="field"><label>Rating</label>
+        <div class="star-rate" id="journalStarRate" data-value="0">
+          <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+        </div>
+      </div>
+      <div class="field"><label>Ulasan</label>
+        <div class="rt-toolbar" data-target="jUlasan">
+          <button type="button" data-cmd="bold" title="Tebal"><strong>B</strong></button>
+          <button type="button" data-cmd="italic" title="Miring"><em>I</em></button>
+          <button type="button" data-cmd="bullet" title="Poin/bullet">&bull;</button>
+        </div>
+        <div id="jUlasan" class="rt-editable" contenteditable="true" data-placeholder="Bagaimana pendapat Anda tentang buku ini? Boleh panjang..."></div>
+      </div>
+      <div class="field"><label>Kutipan Favorit</label>
+        <div class="rt-toolbar" data-target="jKutipan">
+          <button type="button" data-cmd="bold" title="Tebal"><strong>B</strong></button>
+          <button type="button" data-cmd="italic" title="Miring"><em>I</em></button>
+          <button type="button" data-cmd="bullet" title="Poin/bullet">&bull;</button>
+        </div>
+        <div id="jKutipan" class="rt-editable" contenteditable="true" data-placeholder="Kutipan yang berkesan dari buku ini..."></div>
+      </div>
+      <div class="form-actions" id="journalFormActions">
+        <button type="button" class="btn danger" id="deleteJournal" style="display:none;">Hapus</button>
+        <button type="button" class="btn ghost" id="cancelJournal">Batal</button>
+        <button type="submit" class="btn solid">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const STORAGE_KEY = 'books-collection';
 let books = [];
+let journalEntries = [];
 let activeRak = '__semua__';
 let activeStatus = '__semua__';
 let viewMode = 'koleksi'; // 'koleksi' | 'wishlist'
 let viewStyle = 'spine'; // 'spine' | 'grid' | 'list'
-let currentPage = 'dashboard'; // 'dashboard' | 'statistik' | 'keuangan' | 'peminjaman'
+let currentPage = 'dashboard'; // 'dashboard' | 'statistik' | 'jurnal' | 'keuangan' | 'peminjaman'
 let searchTerm = '';
 const SPINE_COLORS = ['var(--pink-dark)','var(--lilac)','var(--sage)','var(--peach)','var(--rosegold)','#C98FA6'];
 
@@ -621,7 +682,7 @@ function showToast(msg){
 
 /* ---------------- Local storage (IndexedDB) ---------------- */
 const DB_NAME = 'katalog-buku-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let db;
 function openDB(){
   return new Promise((resolve,reject)=>{
@@ -630,6 +691,7 @@ function openDB(){
       const _db = e.target.result;
       if(!_db.objectStoreNames.contains('books')) _db.createObjectStore('books',{keyPath:'id'});
       if(!_db.objectStoreNames.contains('settings')) _db.createObjectStore('settings',{keyPath:'id'});
+      if(!_db.objectStoreNames.contains('journal')) _db.createObjectStore('journal',{keyPath:'id'});
     };
     req.onsuccess = (e)=>{ db = e.target.result; resolve(db); };
     req.onerror = (e)=> reject(e);
@@ -649,6 +711,23 @@ function dbPutAll(list){
     const store = tx.objectStore('books');
     store.clear();
     list.forEach(b=> store.put(b));
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = (e)=> reject(e);
+  });
+}
+function dbGetAllJournal(){
+  return new Promise((resolve,reject)=>{
+    const req = db.transaction('journal','readonly').objectStore('journal').getAll();
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = (e)=>reject(e);
+  });
+}
+function dbPutAllJournal(list){
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('journal','readwrite');
+    const store = tx.objectStore('journal');
+    store.clear();
+    list.forEach(j=> store.put(j));
     tx.oncomplete = ()=> resolve(true);
     tx.onerror = (e)=> reject(e);
   });
@@ -678,8 +757,11 @@ async function loadBooks(){
     await openDB();
     books = await dbGetAll();
     settings = await dbGetSettings();
+    journalEntries = await dbGetAllJournal();
+    await migrateOldJournalData();
   }catch(e){
     books = [];
+    journalEntries = [];
   }
 }
 async function saveBooks(){
@@ -690,6 +772,40 @@ async function saveBooks(){
     showToast('Gagal menyimpan — coba lagi');
     return false;
   }
+}
+async function saveJournal(){
+  try{
+    await dbPutAllJournal(journalEntries);
+    return true;
+  }catch(e){
+    showToast('Gagal menyimpan catatan — coba lagi');
+    return false;
+  }
+}
+
+/* Migrasi satu kali: pindahkan rating/ulasan/kutipan lama yang tersimpan di data buku ke notebook jurnal terpisah */
+async function migrateOldJournalData(){
+  if(settings.journalMigrated) return;
+  let changed = false;
+  books.forEach(b=>{
+    if(!b.isWishlist && (b.rating>0 || (b.ulasan&&b.ulasan.trim()) || (b.kutipan&&b.kutipan.trim()))){
+      journalEntries.push({
+        id: uid(),
+        bookId: b.id,
+        manualJudul: '', manualPenulis: '',
+        tanggalCatatan: b.tanggalPerolehan || new Date(b.addedAt).toISOString().slice(0,10),
+        rating: b.rating||0,
+        ulasan: b.ulasan||'',
+        kutipan: b.kutipan||'',
+        createdAt: b.addedAt,
+      });
+      b.rating = 0; b.ulasan=''; b.kutipan='';
+      changed = true;
+    }
+  });
+  if(changed){ await saveBooks(); await saveJournal(); }
+  settings.journalMigrated = true;
+  await dbPutSettings(settings);
 }
 
 /* ---------------- Ekspor / Impor cadangan (untuk pindah antar perangkat) ---------------- */
@@ -877,15 +993,17 @@ document.getElementById('fWishlist').addEventListener('change', (e)=>{
   document.getElementById('halamanRow').style.display = e.target.checked ? 'none' : 'flex';
 });
 
-/* Rating bintang */
-function setStarRate(val){
-  const wrap = document.getElementById('starRate');
+/* Rating bintang (generik, dipakai untuk form jurnal) */
+function setStarRate(wrapId, val){
+  const wrap = document.getElementById(wrapId);
   wrap.dataset.value = val;
   wrap.querySelectorAll('span').forEach(s=> s.classList.toggle('filled', +s.dataset.v <= val));
 }
-document.querySelectorAll('#starRate span').forEach(s=>{
-  s.onclick = ()=> setStarRate(+s.dataset.v === +document.getElementById('starRate').dataset.value ? 0 : +s.dataset.v);
-});
+function wireStarRate(wrapId){
+  document.querySelectorAll('#'+wrapId+' span').forEach(s=>{
+    s.onclick = ()=> setStarRate(wrapId, +s.dataset.v === +document.getElementById(wrapId).dataset.value ? 0 : +s.dataset.v);
+  });
+}
 
 /* Komponen autocomplete kustom (menggantikan <datalist> yang tidak stabil di Chrome Android) */
 function setupAutocomplete(inputId, listId, getValues){
@@ -1152,7 +1270,11 @@ function renderKeuanganPage(main){
   withHarga.forEach(b=>{ const a=b.asal||'Tidak diketahui'; byAsal[a]=(byAsal[a]||0)+b.hargaNum; });
   const asalRows = Object.entries(byAsal).sort((a,b)=>b[1]-a[1]);
 
-  const recent = withHarga.slice().sort((a,b)=> b.addedAt-a.addedAt).slice(0,6);
+  const recent = withHarga.slice().sort((a,b)=>{
+    const da = a.tanggalPerolehan ? new Date(a.tanggalPerolehan) : new Date(a.addedAt);
+    const db_ = b.tanggalPerolehan ? new Date(b.tanggalPerolehan) : new Date(b.addedAt);
+    return db_ - da;
+  }).slice(0,5);
 
   const wishlist = books.filter(b=>b.isWishlist).map(b=>({...b, hargaNum: parseHarga(b.harga)}));
   const wishlistWithHarga = wishlist.filter(b=>b.hargaNum>0);
@@ -1183,7 +1305,7 @@ function renderKeuanganPage(main){
             <span class="stat-count">${fmtRp(b.hargaNum)}</span>
           </div>
         `).join('') : '<p class="stat-empty">Belum ada catatan harga buku.</p>'}
-        ${withHarga.length>6 ? `<p class="stat-empty" style="margin-top:8px;">+${withHarga.length-6} perolehan lainnya</p>` : ''}
+        ${withHarga.length>5 ? `<p class="stat-empty" style="margin-top:8px;">+${withHarga.length-5} perolehan lainnya</p>` : ''}
       </div>
 
       <div class="stat-block">
@@ -1200,40 +1322,181 @@ function renderKeuanganPage(main){
     </div>`;
 }
 
-/* ---------------- Halaman: Jurnal Baca ---------------- */
+/* ---------------- Halaman: Jurnal Baca (notebook terpisah) ---------------- */
+function journalIdentity(j){
+  if(j.bookId){
+    const book = books.find(b=>b.id===j.bookId);
+    if(book) return {judul: book.judul, penulis: book.penulis, cover: book.coverDataUrl, colorSeed: book.id};
+  }
+  return {judul: j.manualJudul||'Tanpa Judul', penulis: j.manualPenulis, cover: null, colorSeed: j.id};
+}
+
 function renderJurnalPage(main){
-  const entries = books.filter(b=> !b.isWishlist && (b.rating>0 || (b.ulasan&&b.ulasan.trim()) || (b.kutipan&&b.kutipan.trim())));
-  if(entries.length===0){
+  const header = `<div class="journal-toolbar"><button class="btn solid small" id="btnTambahCatatan">+ Tambah Catatan</button></div>`;
+  if(journalEntries.length===0){
     main.innerHTML = `
-      <div class="empty-state">
-        <div class="frame"></div>
-        <h3>Jurnal masih kosong</h3>
-        <p>Tambahkan rating, ulasan, atau kutipan favorit lewat Edit buku untuk mulai mengisi jurnal baca Anda.</p>
+      <div class="stat-page">${header}
+        <div class="empty-state">
+          <div class="frame"></div>
+          <h3>Notebook masih kosong</h3>
+          <p>Catat kesan, rating, atau kutipan favorit dari buku yang sudah Anda baca — boleh dari koleksi, boleh juga buku yang belum dikatalogkan.</p>
+        </div>
       </div>`;
+    document.getElementById('btnTambahCatatan').onclick = ()=> openJournalForm(null);
     return;
   }
-  const sorted = entries.slice().sort((a,b)=> b.addedAt-a.addedAt);
+  const sorted = journalEntries.slice().sort((a,b)=> new Date(b.tanggalCatatan||b.createdAt) - new Date(a.tanggalCatatan||a.createdAt));
   main.innerHTML = `
-    <div class="stat-page">
-      ${sorted.map((b,i)=>`
-        <div class="journal-entry" data-id="${b.id}">
+    <div class="stat-page">${header}
+      ${sorted.map(j=>{
+        const id = journalIdentity(j);
+        return `
+        <div class="journal-entry" data-id="${j.id}">
           <div class="journal-entry-head">
-            ${b.coverDataUrl? `<img src="${b.coverDataUrl}" class="journal-cover">` : `<div class="journal-cover journal-cover-blank" style="background:${spineColorFor(b.id)}"></div>`}
+            ${id.cover? `<img src="${id.cover}" class="journal-cover">` : `<div class="journal-cover journal-cover-blank" style="background:${spineColorFor(id.colorSeed)}"></div>`}
             <div class="journal-meta">
-              <strong>${escapeHtml(b.judul)}</strong>
-              <span class="journal-author">${b.penulis? escapeHtml(b.penulis) : 'Penulis tidak diketahui'}</span>
-              ${b.rating? `<div class="detail-stars">${'★'.repeat(b.rating)}${'☆'.repeat(5-b.rating)}</div>` : ''}
+              <strong>${escapeHtml(id.judul)}</strong>
+              <span class="journal-author">${id.penulis? escapeHtml(id.penulis) : 'Penulis tidak diketahui'}</span>
+              ${j.rating? `<div class="detail-stars">${'★'.repeat(j.rating)}${'☆'.repeat(5-j.rating)}</div>` : ''}
             </div>
+            <span class="journal-date">${formatTanggal(j.tanggalCatatan)||''}</span>
           </div>
-          ${b.ulasan? `<p class="journal-text">${escapeHtml(b.ulasan)}</p>` : ''}
-          ${b.kutipan? `<p class="journal-quote">&ldquo;${escapeHtml(b.kutipan)}&rdquo;</p>` : ''}
-        </div>
-      `).join('')}
+          ${j.ulasan? `<div class="journal-text">${renderRichContent(j.ulasan)}</div>` : ''}
+          ${j.kutipan? `<div class="journal-quote">&ldquo;${renderRichContent(j.kutipan)}&rdquo;</div>` : ''}
+        </div>`;
+      }).join('')}
     </div>`;
+  document.getElementById('btnTambahCatatan').onclick = ()=> openJournalForm(null);
   main.querySelectorAll('.journal-entry').forEach(el=>{
-    el.onclick = ()=> openDetail(el.dataset.id);
+    el.onclick = ()=> openJournalForm(journalEntries.find(j=>j.id===el.dataset.id));
   });
 }
+
+function populateJBookSelect(selectedBookId){
+  const sel = document.getElementById('jBookSelect');
+  const owned = books.filter(b=>!b.isWishlist).slice().sort((a,b)=>a.judul.localeCompare(b.judul));
+  sel.innerHTML = '<option value="">— Tidak dipilih —</option>' +
+    owned.map(b=>`<option value="${b.id}" ${b.id===selectedBookId?'selected':''}>${escapeHtml(b.judul)}${b.penulis? ' — '+escapeHtml(b.penulis):''}</option>`).join('');
+}
+
+function openJournalForm(entry, presetBookId){
+  document.getElementById('journalFormTitle').textContent = entry? 'Edit Catatan' : 'Catatan Baru';
+  document.getElementById('jEntryId').value = entry? entry.id : '';
+  populateJBookSelect(entry? entry.bookId : (presetBookId||''));
+  const isManual = entry? !entry.bookId && !!(entry.manualJudul) : false;
+  document.getElementById('jManualToggle').checked = isManual;
+  document.getElementById('jManualFields').style.display = isManual ? 'block' : 'none';
+  document.getElementById('jManualJudul').value = entry? (entry.manualJudul||'') : '';
+  document.getElementById('jManualPenulis').value = entry? (entry.manualPenulis||'') : '';
+  document.getElementById('jTanggal').value = entry? (entry.tanggalCatatan||'') : new Date().toISOString().slice(0,10);
+  setStarRate('journalStarRate', entry? (entry.rating||0) : 0);
+  document.getElementById('jUlasan').innerHTML = entry? (entry.ulasan||'') : '';
+  document.getElementById('jKutipan').innerHTML = entry? (entry.kutipan||'') : '';
+  document.getElementById('deleteJournal').style.display = entry? '' : 'none';
+  document.getElementById('overlayJournal').classList.add('show');
+}
+
+document.getElementById('jBookSelect').addEventListener('change', (e)=>{
+  if(e.target.value){
+    document.getElementById('jManualToggle').checked = false;
+    document.getElementById('jManualFields').style.display = 'none';
+  }
+});
+document.getElementById('jManualToggle').addEventListener('change', (e)=>{
+  document.getElementById('jManualFields').style.display = e.target.checked ? 'block' : 'none';
+  if(e.target.checked) document.getElementById('jBookSelect').value = '';
+});
+wireStarRate('journalStarRate');
+
+/* Toolbar format teks WYSIWYG (Bold/Italic/Bullet) untuk area contenteditable Ulasan & Kutipan */
+function applyTextFormat(targetId, cmd){
+  const el = document.getElementById(targetId);
+  el.focus();
+  if(cmd==='bold') document.execCommand('bold');
+  else if(cmd==='italic') document.execCommand('italic');
+  else if(cmd==='bullet') document.execCommand('insertUnorderedList');
+}
+document.querySelectorAll('.rt-toolbar button').forEach(btn=>{
+  btn.onclick = ()=> applyTextFormat(btn.closest('.rt-toolbar').dataset.target, btn.dataset.cmd);
+});
+document.querySelectorAll('.rt-editable').forEach(el=>{
+  el.addEventListener('paste', (e)=>{
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, text);
+  });
+});
+function getEditableContent(id){
+  const html = document.getElementById(id).innerHTML.trim();
+  if(html==='' || html==='<br>' || html==='<div><br></div>') return '';
+  return html;
+}
+
+/* Render teks berformat sederhana (markdown ringan: **tebal**, *miring*, - poin) jadi HTML aman — untuk catatan lama sebelum editor WYSIWYG */
+function mdToHtml(raw){
+  if(!raw) return '';
+  const inlineFormat = (s)=> s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');
+  const lines = escapeHtml(raw).split('\n');
+  let html = ''; let inList = false;
+  lines.forEach(line=>{
+    const bullet = line.match(/^-\s+(.*)/);
+    if(bullet){
+      if(!inList){ html += '<ul>'; inList = true; }
+      html += `<li>${inlineFormat(bullet[1])}</li>`;
+    } else {
+      if(inList){ html += '</ul>'; inList = false; }
+      html += line.trim() ? `<p>${inlineFormat(line)}</p>` : '<br>';
+    }
+  });
+  if(inList) html += '</ul>';
+  return html;
+}
+/* Konten dari editor WYSIWYG baru sudah berupa HTML asli; konten lama (sebelum revisi ini) masih teks polos bermarkah markdown */
+function renderRichContent(raw){
+  if(!raw) return '';
+  return raw.includes('<') ? raw : mdToHtml(raw);
+}
+
+document.getElementById('closeJournal').onclick = ()=> document.getElementById('overlayJournal').classList.remove('show');
+document.getElementById('cancelJournal').onclick = ()=> document.getElementById('overlayJournal').classList.remove('show');
+document.getElementById('overlayJournal').addEventListener('click', (e)=>{ if(e.target.id==='overlayJournal') e.target.classList.remove('show'); });
+
+document.getElementById('journalForm').onsubmit = async (e)=>{
+  e.preventDefault();
+  const id = document.getElementById('jEntryId').value || uid();
+  const existing = journalEntries.find(j=>j.id===id);
+  const bookId = document.getElementById('jBookSelect').value || null;
+  const entry = {
+    id,
+    bookId,
+    manualJudul: bookId? '' : document.getElementById('jManualJudul').value.trim(),
+    manualPenulis: bookId? '' : document.getElementById('jManualPenulis').value.trim(),
+    tanggalCatatan: document.getElementById('jTanggal').value,
+    rating: +document.getElementById('journalStarRate').dataset.value || 0,
+    ulasan: getEditableContent('jUlasan'),
+    kutipan: getEditableContent('jKutipan'),
+    createdAt: existing? existing.createdAt : Date.now(),
+  };
+  if(existing){ journalEntries = journalEntries.map(j=> j.id===id? entry : j); }
+  else{ journalEntries.push(entry); }
+  await saveJournal();
+  document.getElementById('overlayJournal').classList.remove('show');
+  render();
+  showToast(existing? 'Catatan diperbarui' : 'Catatan tersimpan di notebook');
+};
+
+document.getElementById('deleteJournal').onclick = async ()=>{
+  const id = document.getElementById('jEntryId').value;
+  if(!id) return;
+  if(confirm('Hapus catatan ini dari notebook?')){
+    journalEntries = journalEntries.filter(j=>j.id!==id);
+    await saveJournal();
+    document.getElementById('overlayJournal').classList.remove('show');
+    render();
+    showToast('Catatan dihapus');
+  }
+};
+
 
 /* ---------------- Halaman: Peminjaman Buku ---------------- */
 function renderPeminjamanPage(main){
@@ -1302,9 +1565,14 @@ function openDetail(id){
     <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
   ` : '';
 
-  const ratingBlock = b.rating ? `<div class="detail-stars">${'★'.repeat(b.rating)}${'☆'.repeat(5-b.rating)}</div>` : '';
-  const ulasanBlock = b.ulasan ? `<div class="catatan-box"><strong>Ulasan:</strong> ${escapeHtml(b.ulasan)}</div>` : '';
-  const kutipanBlock = b.kutipan ? `<div class="catatan-box quote-box">&ldquo;${escapeHtml(b.kutipan)}&rdquo;</div>` : '';
+  const journalEntry = journalEntries.find(j=>j.bookId===b.id);
+  const notebookLink = !b.isWishlist ? `
+    <div style="text-align:center;margin-bottom:14px;">
+      <button type="button" class="journal-notebook-link" id="btnNotebook">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 3h9a2 2 0 0 1 2 2v12l-3-2-3 2-3-2-3 2V5a2 2 0 0 1 1-2z"/></svg>
+        ${journalEntry? 'Lihat Catatan Jurnal' : 'Tulis Catatan Jurnal'}
+      </button>
+    </div>` : '';
 
   const lendBlock = b.dipinjamkan ? `
     <div class="catatan-box lend-box">
@@ -1320,7 +1588,7 @@ function openDetail(id){
     <div class="kartu-eyebrow">${eyebrow}${b.addedBy? ' &middot; oleh '+escapeHtml(b.addedBy):''}</div>
     <h2>${escapeHtml(b.judul)}</h2>
     <p class="penulis">${b.penulis? escapeHtml(b.penulis) : 'Penulis tidak diketahui'}</p>
-    ${ratingBlock}
+    ${notebookLink}
     <div class="catalog-meta">
       <span class="k">Ditambahkan</span><span>${new Date(b.addedAt).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
       ${b.harga? `<span class="k">Harga</span><span>${escapeHtml(b.harga)}</span>` : ''}
@@ -1330,8 +1598,6 @@ function openDetail(id){
     ${statusBlock}
     ${progressBlock}
     ${b.catatan? `<div class="catatan-box">${escapeHtml(b.catatan)}</div>` : ''}
-    ${ulasanBlock}
-    ${kutipanBlock}
     ${lendBlock}
     ${statusRowBlock}
     <div class="catalog-actions">
@@ -1344,6 +1610,12 @@ function openDetail(id){
   `;
   document.getElementById('overlayDetail').classList.add('show');
   document.getElementById('closeDetail').onclick = ()=> document.getElementById('overlayDetail').classList.remove('show');
+  const btnNotebook = document.getElementById('btnNotebook');
+  if(btnNotebook) btnNotebook.onclick = ()=>{
+    document.getElementById('overlayDetail').classList.remove('show');
+    if(journalEntry){ openJournalForm(journalEntry); }
+    else{ openJournalForm(null, b.id); }
+  };
   card.querySelectorAll('.status-row button').forEach(btn=>{
     btn.onclick = async ()=>{
       b.status = btn.dataset.s;
@@ -1451,9 +1723,6 @@ function openForm(book, presetRak, presetWishlist){
   document.getElementById('fHalamanSaatIni').value = book? (book.halamanSaatIni||'') : '';
   document.getElementById('fTotalHalaman').value = book? (book.totalHalaman||'') : '';
   document.getElementById('fCatatan').value = book? (book.catatan||'') : '';
-  setStarRate(book? (book.rating||0) : 0);
-  document.getElementById('fUlasan').value = book? (book.ulasan||'') : '';
-  document.getElementById('fKutipan').value = book? (book.kutipan||'') : '';
   document.getElementById('fHarga').value = book? (book.harga||'') : '';
   document.getElementById('fAsal').value = book? (book.asal||'') : '';
   document.getElementById('fTanggal').value = book? (book.tanggalPerolehan||'') : '';
@@ -1507,9 +1776,6 @@ document.getElementById('bookForm').onsubmit = async (e)=>{
     halamanSaatIni: isWishlist ? '' : document.getElementById('fHalamanSaatIni').value,
     totalHalaman: isWishlist ? '' : document.getElementById('fTotalHalaman').value,
     catatan: document.getElementById('fCatatan').value.trim(),
-    rating: +document.getElementById('starRate').dataset.value || 0,
-    ulasan: document.getElementById('fUlasan').value.trim(),
-    kutipan: document.getElementById('fKutipan').value.trim(),
     harga: document.getElementById('fHarga').value.trim(),
     asal: document.getElementById('fAsal').value.trim(),
     tanggalPerolehan: document.getElementById('fTanggal').value,
