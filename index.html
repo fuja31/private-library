@@ -888,6 +888,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
         <button data-type="json">Cadangan (.json) <span>untuk pindah/impor ulang</span></button>
         <button data-type="excel">Daftar Excel (.xlsx) <span>untuk dibuka &amp; diedit di spreadsheet</span></button>
         <button data-type="pdf">Daftar PDF <span>untuk dicetak/dibagikan sebagai daftar</span></button>
+        <button data-type="share">📤 Bagikan Semua File <span>kirim ke Email/WhatsApp/Drive dll</span></button>
       </div>
     </div>
     <button class="btn ghost small" id="btnImport" title="Impor cadangan (.json)">Impor</button>
@@ -1099,17 +1100,29 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
 
 <div class="overlay" id="overlayExitConfirm">
   <div class="modal form-modal" style="text-align:center;">
-    <div class="exit-icon">🚪</div>
-    <h2 style="margin-bottom:8px;">Yakin ingin keluar?</h2>
-    <p style="font-size:13.5px;color:var(--text-soft);margin:0 0 20px;">
-      Sebelum keluar, data katalog akan otomatis diunduh sebagai cadangan (.json), Excel, dan PDF ke folder Download HP Anda.
-    </p>
-    <div id="exitProgress" style="display:none;font-family:var(--font-label);font-size:12.5px;color:var(--pink-dark);margin-bottom:16px;">
-      Menyiapkan unduhan cadangan...
+    <div id="exitStepConfirm">
+      <div class="exit-icon">🚪</div>
+      <h2 style="margin-bottom:8px;">Yakin ingin keluar?</h2>
+      <p style="font-size:13.5px;color:var(--text-soft);margin:0 0 20px;">
+        Sebelum keluar, data katalog akan otomatis diunduh sebagai cadangan (.json), Excel, dan PDF ke folder Download HP Anda.
+      </p>
+      <div id="exitProgress" style="display:none;font-family:var(--font-label);font-size:12.5px;color:var(--pink-dark);margin-bottom:16px;">
+        Menyiapkan unduhan cadangan...
+      </div>
+      <div class="form-actions" style="justify-content:center;">
+        <button type="button" class="btn ghost" id="exitConfirmNo">Tidak</button>
+        <button type="button" class="btn solid" id="exitConfirmYes">Ya, Keluar</button>
+      </div>
     </div>
-    <div class="form-actions" style="justify-content:center;">
-      <button type="button" class="btn ghost" id="exitConfirmNo">Tidak</button>
-      <button type="button" class="btn solid" id="exitConfirmYes">Ya, Keluar</button>
+    <div id="exitStepDone" style="display:none;">
+      <div class="exit-icon">✅</div>
+      <h2 style="margin-bottom:8px;">Cadangan berhasil diunduh</h2>
+      <p style="font-size:13.5px;color:var(--text-soft);margin:0 0 20px;">
+        File .json, .xlsx, dan .pdf sudah tersimpan di folder Download HP Anda. Data Anda aman — sekarang tinggal tutup aplikasi ini secara manual (tombol back atau tombol Home HP), karena browser tidak mengizinkan aplikasi web menutup dirinya sendiri secara otomatis.
+      </p>
+      <div class="form-actions" style="justify-content:center;">
+        <button type="button" class="btn solid" id="exitStepDoneOk">Mengerti</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1271,8 +1284,7 @@ async function migrateOldJournalData(){
 }
 
 /* ---------------- Unduhan otomatis saat konfirmasi keluar aplikasi ---------------- */
-function autoDownloadPdf(){
-  if(books.length===0) return;
+function buildBackupPdfDoc(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const owned = books.filter(b=>!b.isWishlist).slice().sort((a,b)=> (a.rak||'').localeCompare(b.rak||'') || a.judul.localeCompare(b.judul));
@@ -1310,8 +1322,54 @@ function autoDownloadPdf(){
     headStyles: {fillColor:[206,159,143]},
     margin: {left:14, right:14},
   });
+  return doc;
+}
 
+function autoDownloadPdf(){
+  if(books.length===0) return;
+  const doc = buildBackupPdfDoc();
   doc.save(`cadangan-katalog-buku-${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+/* ---------------- Bagikan file cadangan (Email/WhatsApp/Drive dll via share sheet Android) ---------------- */
+async function shareBackupFiles(){
+  if(books.length===0){ showToast('Belum ada buku untuk dibagikan'); return; }
+  if(!navigator.share || !navigator.canShare){
+    showToast('Perangkat/browser ini belum mendukung fitur Bagikan. Gunakan opsi Ekspor manual.');
+    return;
+  }
+  showToast('Menyiapkan file untuk dibagikan...');
+  const dateStr = new Date().toISOString().slice(0,10);
+  try{
+    const payload = {app:'katalog-buku', version:1, exportedAt: Date.now(), books};
+    const jsonFile = new File([JSON.stringify(payload)], `cadangan-katalog-buku-${dateStr}.json`, {type:'application/json'});
+
+    const wb = buildBackupWorkbook();
+    const xlsxArray = XLSX.write(wb, {type:'array', bookType:'xlsx'});
+    const excelFile = new File([xlsxArray], `daftar-buku-${dateStr}.xlsx`, {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+
+    const doc = buildBackupPdfDoc();
+    const pdfBlob = doc.output('blob');
+    const pdfFile = new File([pdfBlob], `cadangan-katalog-buku-${dateStr}.pdf`, {type:'application/pdf'});
+
+    let filesToShare = [jsonFile, excelFile, pdfFile];
+    if(!navigator.canShare({files: filesToShare})){
+      // sebagian perangkat hanya mendukung berbagi satu file sekaligus — coba JSON saja sebagai fallback
+      filesToShare = [jsonFile];
+      if(!navigator.canShare({files: filesToShare})){
+        showToast('Perangkat ini tidak mendukung berbagi file. Gunakan opsi Ekspor manual.');
+        return;
+      }
+    }
+    await navigator.share({
+      files: filesToShare,
+      title: 'Cadangan Katalog Buku',
+      text: `Cadangan katalog buku saya per ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`,
+    });
+  }catch(err){
+    if(err && err.name === 'AbortError') return; // pengguna membatalkan share sheet, bukan error
+    showToast('Gagal membagikan file. Coba lagi atau gunakan Ekspor manual.');
+  }
 }
 
 async function runAutoBackupDownloads(){
@@ -1372,13 +1430,18 @@ function bookRows(){
   }));
 }
 
-function exportExcel(){
-  if(books.length===0){ showToast('Belum ada buku untuk diekspor'); return; }
+function buildBackupWorkbook(){
   const rows = bookRows();
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [{wch:28},{wch:20},{wch:14},{wch:13},{wch:12},{wch:22},{wch:16},{wch:16},{wch:30}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Koleksi Buku');
+  return wb;
+}
+
+function exportExcel(){
+  if(books.length===0){ showToast('Belum ada buku untuk diekspor'); return; }
+  const wb = buildBackupWorkbook();
   XLSX.writeFile(wb, `daftar-buku-${new Date().toISOString().slice(0,10)}.xlsx`);
   showToast('Daftar Excel berhasil diunduh');
 }
@@ -2493,6 +2556,7 @@ document.querySelectorAll('#exportMenu button[data-type]').forEach(btn=>{
     if(type==='json') exportBackup();
     else if(type==='excel') exportExcel();
     else if(type==='pdf') exportPdf();
+    else if(type==='share') shareBackupFiles();
   };
 });
 document.addEventListener('click', (e)=>{
@@ -2568,11 +2632,17 @@ document.getElementById('exitConfirmYes').onclick = async ()=>{
   yesBtn.disabled = true; noBtn.disabled = true;
   // JSON, Excel, dan PDF ketiganya benar-benar terunduh otomatis tanpa perlu sentuhan lagi
   await runAutoBackupDownloads();
-  document.getElementById('overlayExitConfirm').classList.remove('show');
   yesBtn.disabled = false; noBtn.disabled = false;
+  exitConfirmBusy = false;
+  document.getElementById('exitStepConfirm').style.display = 'none';
+  document.getElementById('exitStepDone').style.display = 'block';
+};
+document.getElementById('exitStepDoneOk').onclick = ()=>{
+  document.getElementById('overlayExitConfirm').classList.remove('show');
+  document.getElementById('exitStepConfirm').style.display = 'block';
+  document.getElementById('exitStepDone').style.display = 'none';
   allowRealExit = true;
-  history.back(); // konsumsi entri penyangga, lanjutkan proses keluar yang sesungguhnya
-  setTimeout(()=>{ window.close(); }, 200); // percobaan tambahan menutup aplikasi (berhasil di sebagian besar PWA terinstall)
+  history.back(); // konsumsi entri penyangga, supaya tekan back sekali lagi langsung keluar
 };
 
 /* ---------------- Init ---------------- */
