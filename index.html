@@ -1340,36 +1340,43 @@ async function shareBackupFiles(){
   }
   showToast('Menyiapkan file untuk dibagikan...');
   const dateStr = new Date().toISOString().slice(0,10);
+
+  let jsonFile, excelFile, pdfFile;
   try{
     const payload = {app:'katalog-buku', version:1, exportedAt: Date.now(), books};
-    const jsonFile = new File([JSON.stringify(payload)], `cadangan-katalog-buku-${dateStr}.json`, {type:'application/json'});
+    jsonFile = new File([JSON.stringify(payload)], `cadangan-katalog-buku-${dateStr}.json`, {type:'application/json'});
 
     const wb = buildBackupWorkbook();
     const xlsxArray = XLSX.write(wb, {type:'array', bookType:'xlsx'});
-    const excelFile = new File([xlsxArray], `daftar-buku-${dateStr}.xlsx`, {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    excelFile = new File([xlsxArray], `daftar-buku-${dateStr}.xlsx`, {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 
     const doc = buildBackupPdfDoc();
     const pdfBlob = doc.output('blob');
-    const pdfFile = new File([pdfBlob], `cadangan-katalog-buku-${dateStr}.pdf`, {type:'application/pdf'});
-
-    let filesToShare = [jsonFile, excelFile, pdfFile];
-    if(!navigator.canShare({files: filesToShare})){
-      // sebagian perangkat hanya mendukung berbagi satu file sekaligus — coba JSON saja sebagai fallback
-      filesToShare = [jsonFile];
-      if(!navigator.canShare({files: filesToShare})){
-        showToast('Perangkat ini tidak mendukung berbagi file. Gunakan opsi Ekspor manual.');
-        return;
-      }
-    }
-    await navigator.share({
-      files: filesToShare,
-      title: 'Cadangan Katalog Buku',
-      text: `Cadangan katalog buku saya per ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`,
-    });
+    pdfFile = new File([pdfBlob], `cadangan-katalog-buku-${dateStr}.pdf`, {type:'application/pdf'});
   }catch(err){
-    if(err && err.name === 'AbortError') return; // pengguna membatalkan share sheet, bukan error
-    showToast('Gagal membagikan file. Coba lagi atau gunakan Ekspor manual.');
+    showToast('Gagal menyiapkan file cadangan. Coba lagi atau gunakan Ekspor manual.');
+    return;
   }
+
+  const shareText = `Cadangan katalog buku saya per ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`;
+
+  async function tryShare(files){
+    if(!navigator.canShare({files})) return false;
+    try{
+      await navigator.share({ files, title: 'Cadangan Katalog Buku', text: shareText });
+      return true;
+    }catch(err){
+      if(err && err.name === 'AbortError') return true; // pengguna membatalkan share sheet, bukan error
+      return false; // gagal di level share sesungguhnya, coba fallback berikutnya
+    }
+  }
+
+  // 1) coba bagikan ketiga file sekaligus
+  if(await tryShare([jsonFile, excelFile, pdfFile])) return;
+  // 2) sebagian perangkat/aplikasi hanya mendukung satu file — coba JSON saja (paling penting untuk restore data)
+  if(await tryShare([jsonFile])) return;
+  // 3) semua percobaan gagal
+  showToast('HP ini tampaknya tidak mendukung berbagi banyak file sekaligus. Gunakan opsi Ekspor manual, lalu lampirkan filenya sendiri di aplikasi email.');
 }
 
 async function runAutoBackupDownloads(){
