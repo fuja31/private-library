@@ -892,7 +892,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       </div>
     </div>
     <button class="btn ghost small" id="btnImport" title="Impor cadangan (.json)">Impor</button>
-    <input type="file" id="importFile" accept="application/json" style="display:none">
+    <input type="file" id="importFile" accept="application/json,.json,text/plain,.txt" style="display:none">
     <button class="btn solid" id="btnTambah">+ Tambah Buku</button>
   </div>
 </header>
@@ -1344,7 +1344,9 @@ async function shareBackupFiles(){
   let jsonFile, excelFile, pdfFile;
   try{
     const payload = {app:'katalog-buku', version:1, exportedAt: Date.now(), books};
-    jsonFile = new File([JSON.stringify(payload)], `cadangan-katalog-buku-${dateStr}.json`, {type:'application/json'});
+    // Catatan: ekstensi .json tidak masuk daftar putih tipe file yang diizinkan Android untuk fitur Share,
+    // jadi khusus untuk berbagi kita pakai .txt (isinya tetap JSON valid, aplikasi ini tetap bisa mengimpornya).
+    jsonFile = new File([JSON.stringify(payload)], `cadangan-katalog-buku-${dateStr}.txt`, {type:'text/plain'});
 
     const wb = buildBackupWorkbook();
     const xlsxArray = XLSX.write(wb, {type:'array', bookType:'xlsx'});
@@ -1373,10 +1375,14 @@ async function shareBackupFiles(){
 
   // 1) coba bagikan ketiga file sekaligus
   if(await tryShare([jsonFile, excelFile, pdfFile])) return;
-  // 2) sebagian perangkat/aplikasi hanya mendukung satu file — coba JSON saja (paling penting untuk restore data)
+  // 2) coba Excel + PDF saja (siapa tahu salah satu tipe file bermasalah di HP ini)
+  if(await tryShare([excelFile, pdfFile])) return;
+  // 3) coba satu-satu, cadangan JSON (berformat .txt) diprioritaskan karena paling penting untuk restore data
   if(await tryShare([jsonFile])) return;
-  // 3) semua percobaan gagal
-  showToast('HP ini tampaknya tidak mendukung berbagi banyak file sekaligus. Gunakan opsi Ekspor manual, lalu lampirkan filenya sendiri di aplikasi email.');
+  if(await tryShare([pdfFile])) return;
+  if(await tryShare([excelFile])) return;
+  // 4) semua percobaan gagal
+  showToast('HP ini tampaknya tidak mendukung berbagi file dari aplikasi ini. Gunakan opsi Ekspor manual, lalu lampirkan filenya sendiri di aplikasi email.');
 }
 
 async function runAutoBackupDownloads(){
