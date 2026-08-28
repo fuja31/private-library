@@ -888,11 +888,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
         <button data-type="json">Cadangan (.json) <span>untuk pindah/impor ulang</span></button>
         <button data-type="excel">Daftar Excel (.xlsx) <span>untuk dibuka &amp; diedit di spreadsheet</span></button>
         <button data-type="pdf">Daftar PDF <span>untuk dicetak/dibagikan sebagai daftar</span></button>
-        <button data-type="share">📤 Bagikan Semua File <span>kirim ke Email/WhatsApp/Drive dll</span></button>
       </div>
     </div>
     <button class="btn ghost small" id="btnImport" title="Impor cadangan (.json)">Impor</button>
-    <input type="file" id="importFile" accept="application/json,.json,text/plain,.txt" style="display:none">
+    <input type="file" id="importFile" accept="application/json" style="display:none">
     <button class="btn solid" id="btnTambah">+ Tambah Buku</button>
   </div>
 </header>
@@ -1329,60 +1328,6 @@ function autoDownloadPdf(){
   if(books.length===0) return;
   const doc = buildBackupPdfDoc();
   doc.save(`cadangan-katalog-buku-${new Date().toISOString().slice(0,10)}.pdf`);
-}
-
-/* ---------------- Bagikan file cadangan (Email/WhatsApp/Drive dll via share sheet Android) ---------------- */
-async function shareBackupFiles(){
-  if(books.length===0){ showToast('Belum ada buku untuk dibagikan'); return; }
-  if(!navigator.share || !navigator.canShare){
-    showToast('Perangkat/browser ini belum mendukung fitur Bagikan. Gunakan opsi Ekspor manual.');
-    return;
-  }
-  showToast('Menyiapkan file untuk dibagikan...');
-  const dateStr = new Date().toISOString().slice(0,10);
-
-  let jsonFile, excelFile, pdfFile;
-  try{
-    const payload = {app:'katalog-buku', version:1, exportedAt: Date.now(), books};
-    // Catatan: ekstensi .json tidak masuk daftar putih tipe file yang diizinkan Android untuk fitur Share,
-    // jadi khusus untuk berbagi kita pakai .txt (isinya tetap JSON valid, aplikasi ini tetap bisa mengimpornya).
-    jsonFile = new File([JSON.stringify(payload)], `cadangan-katalog-buku-${dateStr}.txt`, {type:'text/plain'});
-
-    const wb = buildBackupWorkbook();
-    const xlsxArray = XLSX.write(wb, {type:'array', bookType:'xlsx'});
-    excelFile = new File([xlsxArray], `daftar-buku-${dateStr}.xlsx`, {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-
-    const doc = buildBackupPdfDoc();
-    const pdfBlob = doc.output('blob');
-    pdfFile = new File([pdfBlob], `cadangan-katalog-buku-${dateStr}.pdf`, {type:'application/pdf'});
-  }catch(err){
-    showToast('Gagal menyiapkan file cadangan. Coba lagi atau gunakan Ekspor manual.');
-    return;
-  }
-
-  const shareText = `Cadangan katalog buku saya per ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`;
-
-  async function tryShare(files){
-    if(!navigator.canShare({files})) return false;
-    try{
-      await navigator.share({ files, title: 'Cadangan Katalog Buku', text: shareText });
-      return true;
-    }catch(err){
-      if(err && err.name === 'AbortError') return true; // pengguna membatalkan share sheet, bukan error
-      return false; // gagal di level share sesungguhnya, coba fallback berikutnya
-    }
-  }
-
-  // 1) coba bagikan ketiga file sekaligus
-  if(await tryShare([jsonFile, excelFile, pdfFile])) return;
-  // 2) coba Excel + PDF saja (siapa tahu salah satu tipe file bermasalah di HP ini)
-  if(await tryShare([excelFile, pdfFile])) return;
-  // 3) coba satu-satu, cadangan JSON (berformat .txt) diprioritaskan karena paling penting untuk restore data
-  if(await tryShare([jsonFile])) return;
-  if(await tryShare([pdfFile])) return;
-  if(await tryShare([excelFile])) return;
-  // 4) semua percobaan gagal
-  showToast('HP ini tampaknya tidak mendukung berbagi file dari aplikasi ini. Gunakan opsi Ekspor manual, lalu lampirkan filenya sendiri di aplikasi email.');
 }
 
 async function runAutoBackupDownloads(){
@@ -2569,7 +2514,6 @@ document.querySelectorAll('#exportMenu button[data-type]').forEach(btn=>{
     if(type==='json') exportBackup();
     else if(type==='excel') exportExcel();
     else if(type==='pdf') exportPdf();
-    else if(type==='share') shareBackupFiles();
   };
 });
 document.addEventListener('click', (e)=>{
