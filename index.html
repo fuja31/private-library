@@ -1068,7 +1068,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       </div>
 
       <div id="journalEditView">
-        <div class="field"><label>Ulasan</label>
+        <div class="field"><label>📖 Sinopsis</label>
+          <div class="rt-toolbar" data-target="jSinopsis">
+            <button type="button" data-cmd="bold" title="Tebal"><strong>B</strong></button>
+            <button type="button" data-cmd="italic" title="Miring"><em>I</em></button>
+            <button type="button" data-cmd="bullet" title="Poin/bullet">&bull;</button>
+          </div>
+          <div id="jSinopsis" class="rt-editable" contenteditable="true" data-placeholder="Ringkasan singkat isi buku, tanpa spoiler..."></div>
+        </div>
+        <div class="field"><label>💭 Kesan Pribadi</label>
           <div class="rt-toolbar" data-target="jUlasan">
             <button type="button" data-cmd="bold" title="Tebal"><strong>B</strong></button>
             <button type="button" data-cmd="italic" title="Miring"><em>I</em></button>
@@ -1076,7 +1084,39 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
           </div>
           <div id="jUlasan" class="rt-editable" contenteditable="true" data-placeholder="Bagaimana pendapat Anda tentang buku ini? Boleh panjang..."></div>
         </div>
-        <div class="field"><label>Catatan</label>
+        <div class="field"><label>👍 Kelebihan</label>
+          <div class="rt-toolbar" data-target="jKelebihan">
+            <button type="button" data-cmd="bold" title="Tebal"><strong>B</strong></button>
+            <button type="button" data-cmd="italic" title="Miring"><em>I</em></button>
+            <button type="button" data-cmd="bullet" title="Poin/bullet">&bull;</button>
+          </div>
+          <div id="jKelebihan" class="rt-editable" contenteditable="true" data-placeholder="Apa yang bagus dari buku ini..."></div>
+        </div>
+        <div class="field"><label>👎 Kekurangan</label>
+          <div class="rt-toolbar" data-target="jKekurangan">
+            <button type="button" data-cmd="bold" title="Tebal"><strong>B</strong></button>
+            <button type="button" data-cmd="italic" title="Miring"><em>I</em></button>
+            <button type="button" data-cmd="bullet" title="Poin/bullet">&bull;</button>
+          </div>
+          <div id="jKekurangan" class="rt-editable" contenteditable="true" data-placeholder="Apa yang kurang atau mengecewakan..."></div>
+        </div>
+        <div class="field"><label>💡 Pelajaran/Insight</label>
+          <div class="rt-toolbar" data-target="jPelajaran">
+            <button type="button" data-cmd="bold" title="Tebal"><strong>B</strong></button>
+            <button type="button" data-cmd="italic" title="Miring"><em>I</em></button>
+            <button type="button" data-cmd="bullet" title="Poin/bullet">&bull;</button>
+          </div>
+          <div id="jPelajaran" class="rt-editable" contenteditable="true" data-placeholder="Hal yang Anda pelajari atau dapatkan dari buku ini..."></div>
+        </div>
+        <div class="field"><label>🎯 Rekomendasi Untuk</label>
+          <div class="rt-toolbar" data-target="jRekomendasi">
+            <button type="button" data-cmd="bold" title="Tebal"><strong>B</strong></button>
+            <button type="button" data-cmd="italic" title="Miring"><em>I</em></button>
+            <button type="button" data-cmd="bullet" title="Poin/bullet">&bull;</button>
+          </div>
+          <div id="jRekomendasi" class="rt-editable" contenteditable="true" data-placeholder="Buku ini cocok dibaca oleh..."></div>
+        </div>
+        <div class="field"><label>💬 Catatan</label>
           <div class="rt-toolbar" data-target="jKutipan">
             <button type="button" data-cmd="bold" title="Tebal"><strong>B</strong></button>
             <button type="button" data-cmd="italic" title="Miring"><em>I</em></button>
@@ -1887,6 +1927,16 @@ function journalIdentity(j){
   return {judul: j.manualJudul||'Tanpa Judul', penulis: j.manualPenulis, cover: null, colorSeed: j.id};
 }
 
+function isRichEmpty(h){
+  if(!h) return true;
+  const t = h.trim();
+  return t==='' || t==='<br>' || t==='<div><br></div>';
+}
+function journalSectionHtml(icon, label, content){
+  if(isRichEmpty(content)) return '';
+  return `<div class="doc-section-label">${icon} ${label}</div>${renderRichContent(content)}`;
+}
+
 function buildJournalDocumentHtml(j){
   const id = journalIdentity(j);
   let html = '';
@@ -1895,10 +1945,16 @@ function buildJournalDocumentHtml(j){
   if(id.penulis) html += `<div class="doc-author">${escapeHtml(id.penulis)}</div>`;
   if(j.tanggalCatatan) html += `<div class="doc-date">${formatTanggal(j.tanggalCatatan)}</div>`;
   if(j.rating) html += `<div class="detail-stars" style="text-align:left;">${'★'.repeat(j.rating)}${'☆'.repeat(5-j.rating)}</div>`;
-  html += `<div class="doc-section-label">Ulasan</div>`;
-  html += j.ulasan ? renderRichContent(j.ulasan) : `<p class="doc-empty">Belum ada ulasan.</p>`;
-  html += `<div class="doc-section-label">Catatan</div>`;
-  html += j.kutipan ? renderRichContent(j.kutipan) : `<p class="doc-empty">Belum ada catatan.</p>`;
+  html += journalSectionHtml('📖', 'Sinopsis', j.sinopsis);
+  html += journalSectionHtml('💭', 'Kesan Pribadi', j.ulasan);
+  html += journalSectionHtml('👍', 'Kelebihan', j.kelebihan);
+  html += journalSectionHtml('👎', 'Kekurangan', j.kekurangan);
+  html += journalSectionHtml('💡', 'Pelajaran/Insight', j.pelajaran);
+  html += journalSectionHtml('🎯', 'Rekomendasi Untuk', j.rekomendasi);
+  html += journalSectionHtml('💬', 'Catatan', j.kutipan);
+  if(!html.includes('doc-section-label')){
+    html += `<p class="doc-empty">Belum ada isi catatan untuk buku ini.</p>`;
+  }
   return html;
 }
 
@@ -1987,6 +2043,10 @@ function exportJournalPdf(){
     .entry ul{margin:0 0 5px;padding-left:18px;font-size:12.5px;}
     @media print{ body{padding:0;} .entry{page-break-inside:avoid;} }
   `;
+  const sectionHtml = (label, content)=>{
+    if(isRichEmpty(content)) return '';
+    return `<div class="label">${label}</div>${renderRichContent(content)}`;
+  };
   const body = sorted.map(j=>{
     const id = journalIdentity(j);
     return `<div class="entry">
@@ -1994,8 +2054,13 @@ function exportJournalPdf(){
       ${id.penulis? `<div class="author">${escapeHtml(id.penulis)}</div>` : ''}
       ${j.tanggalCatatan? `<div class="date">${formatTanggal(j.tanggalCatatan)}</div>` : ''}
       ${j.rating? `<div class="stars">${'★'.repeat(j.rating)}${'☆'.repeat(5-j.rating)}</div>` : ''}
-      ${j.ulasan? `<div class="label">Ulasan</div>${renderRichContent(j.ulasan)}` : ''}
-      ${j.kutipan? `<div class="label">Catatan</div>${renderRichContent(j.kutipan)}` : ''}
+      ${sectionHtml('📖 Sinopsis', j.sinopsis)}
+      ${sectionHtml('💭 Kesan Pribadi', j.ulasan)}
+      ${sectionHtml('👍 Kelebihan', j.kelebihan)}
+      ${sectionHtml('👎 Kekurangan', j.kekurangan)}
+      ${sectionHtml('💡 Pelajaran/Insight', j.pelajaran)}
+      ${sectionHtml('🎯 Rekomendasi Untuk', j.rekomendasi)}
+      ${sectionHtml('💬 Catatan', j.kutipan)}
     </div>`;
   }).join('');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Jurnal Baca</title><style>${style}</style></head>
@@ -2058,17 +2123,27 @@ function buildJournalPreviewHtml(){
     penulis = document.getElementById('jManualPenulis').value.trim();
   }
   const rating = +document.getElementById('journalStarRate').dataset.value || 0;
+  const sinopsis = document.getElementById('jSinopsis').innerHTML.trim();
   const ulasan = document.getElementById('jUlasan').innerHTML.trim();
+  const kelebihan = document.getElementById('jKelebihan').innerHTML.trim();
+  const kekurangan = document.getElementById('jKekurangan').innerHTML.trim();
+  const pelajaran = document.getElementById('jPelajaran').innerHTML.trim();
+  const rekomendasi = document.getElementById('jRekomendasi').innerHTML.trim();
   const catatan = document.getElementById('jKutipan').innerHTML.trim();
-  const isEmpty = (h)=> !h || h==='<br>' || h==='<div><br></div>';
 
   let html = `<h3>${escapeHtml(judul)}</h3>`;
   if(penulis) html += `<div class="doc-author">${escapeHtml(penulis)}</div>`;
   if(rating) html += `<div class="detail-stars" style="text-align:left;">${'★'.repeat(rating)}${'☆'.repeat(5-rating)}</div>`;
-  html += `<div class="doc-section-label">Ulasan</div>`;
-  html += isEmpty(ulasan) ? `<p class="doc-empty">Belum ada ulasan.</p>` : renderRichContent(ulasan);
-  html += `<div class="doc-section-label">Catatan</div>`;
-  html += isEmpty(catatan) ? `<p class="doc-empty">Belum ada catatan.</p>` : renderRichContent(catatan);
+  html += journalSectionHtml('📖', 'Sinopsis', sinopsis);
+  html += journalSectionHtml('💭', 'Kesan Pribadi', ulasan);
+  html += journalSectionHtml('👍', 'Kelebihan', kelebihan);
+  html += journalSectionHtml('👎', 'Kekurangan', kekurangan);
+  html += journalSectionHtml('💡', 'Pelajaran/Insight', pelajaran);
+  html += journalSectionHtml('🎯', 'Rekomendasi Untuk', rekomendasi);
+  html += journalSectionHtml('💬', 'Catatan', catatan);
+  if(!html.includes('doc-section-label')){
+    html += `<p class="doc-empty">Belum ada isi catatan untuk buku ini.</p>`;
+  }
   return html;
 }
 
@@ -2098,7 +2173,12 @@ function openJournalForm(entry, presetBookId){
   document.getElementById('jManualPenulis').value = entry? (entry.manualPenulis||'') : '';
   document.getElementById('jTanggal').value = entry? (entry.tanggalCatatan||'') : new Date().toISOString().slice(0,10);
   setStarRate('journalStarRate', entry? (entry.rating||0) : 0);
+  document.getElementById('jSinopsis').innerHTML = entry? (entry.sinopsis||'') : '';
   document.getElementById('jUlasan').innerHTML = entry? (entry.ulasan||'') : '';
+  document.getElementById('jKelebihan').innerHTML = entry? (entry.kelebihan||'') : '';
+  document.getElementById('jKekurangan').innerHTML = entry? (entry.kekurangan||'') : '';
+  document.getElementById('jPelajaran').innerHTML = entry? (entry.pelajaran||'') : '';
+  document.getElementById('jRekomendasi').innerHTML = entry? (entry.rekomendasi||'') : '';
   document.getElementById('jKutipan').innerHTML = entry? (entry.kutipan||'') : '';
   document.getElementById('deleteJournal').style.display = entry? '' : 'none';
   setJournalTab('tulis');
@@ -2177,7 +2257,12 @@ document.getElementById('journalForm').onsubmit = async (e)=>{
     manualPenulis: bookId? '' : document.getElementById('jManualPenulis').value.trim(),
     tanggalCatatan: document.getElementById('jTanggal').value,
     rating: +document.getElementById('journalStarRate').dataset.value || 0,
+    sinopsis: getEditableContent('jSinopsis'),
     ulasan: getEditableContent('jUlasan'),
+    kelebihan: getEditableContent('jKelebihan'),
+    kekurangan: getEditableContent('jKekurangan'),
+    pelajaran: getEditableContent('jPelajaran'),
+    rekomendasi: getEditableContent('jRekomendasi'),
     kutipan: getEditableContent('jKutipan'),
     createdAt: existing? existing.createdAt : Date.now(),
   };
