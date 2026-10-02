@@ -442,7 +442,8 @@
   .modul-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:16px;}
   .modul-toolbar .modul-search{flex:1 1 100%;}
   .modul-toolbar .modul-search input{width:100%;box-sizing:border-box;}
-  .modul-count{font-family:var(--font-label);font-size:12px;color:var(--text-muted);margin:0 0 10px;}
+  .modul-count{font-family:var(--font-label);font-size:12px;color:var(--text-muted);margin:0;}
+  .modul-viewbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;}
 </style>
 <script>
 /*! xlsx.js (C) 2013-present SheetJS -- http://sheetjs.com */
@@ -1218,6 +1219,7 @@ let books = [];
 let journalEntries = [];
 let modules = []; // modul kuliah (terpisah dari rak buku utama)
 let modulSearch = '';
+let modulView = 'spine'; // 'spine' | 'grid' | 'list'
 let activeRak = '__semua__';
 let activeStatus = '__semua__';
 let viewMode = 'koleksi'; // 'koleksi' | 'wishlist'
@@ -1450,11 +1452,28 @@ function buildBackupPdfDoc(){
     headStyles: {fillColor:[206,159,143]},
     margin: {left:14, right:14},
   });
+
+  if(modules.length){
+    const mods = modules.slice().sort((a,b)=> (a.judul||'').localeCompare(b.judul||''));
+    let y2 = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 34) + 12;
+    if(y2 > 270){ doc.addPage(); y2 = 16; }
+    doc.setFontSize(12);
+    doc.setTextColor(168,92,116);
+    doc.text(`Modul Kuliah (${mods.length})`, 14, y2);
+    doc.autoTable({
+      startY: y2+4,
+      head: [['Judul Modul','Kode MK','Penulis','Harga','Asal/Sumber','Tgl Perolehan']],
+      body: mods.map(m=>[m.judul||'', m.kode||'', m.penulis||'', m.harga||'', m.asal||'', formatTanggal(m.tanggalPerolehan)||'']),
+      styles: {fontSize:7.5, cellPadding:2},
+      headStyles: {fillColor:[183,140,160]},
+      margin: {left:14, right:14},
+    });
+  }
   return doc;
 }
 
 function autoDownloadPdf(){
-  if(books.length===0) return;
+  if(books.length===0 && modules.length===0) return;
   const doc = buildBackupPdfDoc();
   doc.save(`cadangan-katalog-buku-${new Date().toISOString().slice(0,10)}.pdf`);
 }
@@ -1543,14 +1562,14 @@ function buildBackupWorkbook(){
 }
 
 function exportExcel(){
-  if(books.length===0){ showToast('Belum ada buku untuk diekspor'); return; }
+  if(books.length===0 && modules.length===0){ showToast('Belum ada buku untuk diekspor'); return; }
   const wb = buildBackupWorkbook();
   XLSX.writeFile(wb, `daftar-buku-${new Date().toISOString().slice(0,10)}.xlsx`);
   showToast('Daftar Excel berhasil diunduh');
 }
 
 function exportPdf(){
-  if(books.length===0){ showToast('Belum ada buku untuk diekspor'); return; }
+  if(books.length===0 && modules.length===0){ showToast('Belum ada buku untuk diekspor'); return; }
   const owned = books.filter(b=>!b.isWishlist).slice().sort((a,b)=> (a.rak||'').localeCompare(b.rak||'') || a.judul.localeCompare(b.judul));
   const wishlist = books.filter(b=>b.isWishlist).slice().sort((a,b)=> a.judul.localeCompare(b.judul));
   const win = window.open('', '_blank');
@@ -1579,6 +1598,17 @@ function exportPdf(){
       <td>${escapeHtml(b.asal||'')}</td>
       <td>${escapeHtml(formatTanggal(b.tanggalPerolehan)||'')}</td>
     </tr>`).join('');
+  const modulSorted = modules.slice().sort((a,b)=> (a.judul||'').localeCompare(b.judul||''));
+  const modulCols = ['Sampul','Judul Modul','Kode MK','Penulis','Harga','Asal/Sumber','Tgl Perolehan'];
+  const modulRows = modulSorted.map(m=>`<tr>
+      <td class="cover-cell">${m.coverDataUrl? `<img src="${m.coverDataUrl}">` : ''}</td>
+      <td>${escapeHtml(m.judul||'')}</td>
+      <td>${escapeHtml(m.kode||'')}</td>
+      <td>${escapeHtml(m.penulis||'')}</td>
+      <td>${escapeHtml(m.harga||'')}</td>
+      <td>${escapeHtml(m.asal||'')}</td>
+      <td>${escapeHtml(formatTanggal(m.tanggalPerolehan)||'')}</td>
+    </tr>`).join('');
   const wishlistCols = ['Sampul','Judul','Penulis','Estimasi Harga','Catatan'];
   const wishlistRows = wishlist.map(b=>`<tr>
       <td class="cover-cell">${b.coverDataUrl? `<img src="${b.coverDataUrl}">` : ''}</td>
@@ -1598,6 +1628,9 @@ function exportPdf(){
 
       <h2>Wishlist (${wishlist.length})</h2>
       ${wishlist.length? `<table><thead><tr>${wishlistCols.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${wishlistRows}</tbody></table>` : '<p class="empty-note">Belum ada buku di wishlist.</p>'}
+
+      <h2>Modul Kuliah (${modulSorted.length})</h2>
+      ${modulSorted.length? `<table><thead><tr>${modulCols.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${modulRows}</tbody></table>` : '<p class="empty-note">Belum ada modul kuliah.</p>'}
     </body></html>`);
   win.document.close();
   win.focus();
@@ -2571,6 +2604,25 @@ function modulRowHtml(m){
   </div>`;
 }
 
+function modulSpineHtml(m){
+  const color = spineColorFor(m.id);
+  const coverImg = m.coverDataUrl ? `<img class="spine-cover" src="${m.coverDataUrl}">` : '';
+  return `<div class="spine" style="background:${color}" data-id="${m.id}" title="${escapeHtml(m.judul)}">
+    ${coverImg}
+    <div class="spine-title">${escapeHtml(m.judul)}</div>
+  </div>`;
+}
+function modulGridHtml(m){
+  const color = spineColorFor(m.id);
+  const cover = m.coverDataUrl
+    ? `<img class="grid-cover" src="${m.coverDataUrl}">`
+    : `<div class="grid-cover grid-cover-blank" style="background:${color}">${escapeHtml((m.judul||'?').slice(0,1).toUpperCase())}</div>`;
+  return `<div class="grid-card" data-id="${m.id}">
+    ${cover}
+    <div class="grid-card-title">${escapeHtml(m.judul)}</div>
+    <div class="grid-card-meta">${m.kode? escapeHtml(m.kode) : (m.penulis? escapeHtml(m.penulis) : '&nbsp;')}</div>
+  </div>`;
+}
 function renderModulList(){
   const wrap = document.getElementById('modulList');
   if(!wrap) return;
@@ -2589,8 +2641,16 @@ function renderModulList(){
       : `<div class="empty-state"><h3>Tidak ditemukan</h3><p>Tidak ada modul yang cocok dengan pencarian.</p></div>`;
     return;
   }
-  wrap.innerHTML = `<div class="list-wrap">${items.map(modulRowHtml).join('')}</div>`;
-  wrap.querySelectorAll('.modul-row').forEach(el=>{ el.onclick = ()=> openModulDetail(el.dataset.id); });
+  const label = `<div class="rak-label">Modul Kuliah <span class="count">(${items.length})</span></div>`;
+  if(modulView==='grid'){
+    wrap.innerHTML = `<div class="rak">${label}<div class="grid-wrap">${items.map(modulGridHtml).join('')}<button class="add-grid-card" id="modulAddInline">+ Tambah</button></div></div>`;
+  } else if(modulView==='list'){
+    wrap.innerHTML = `<div class="rak">${label}<div class="list-wrap">${items.map(modulRowHtml).join('')}<button class="add-list-row" id="modulAddInline">+ Tambah modul</button></div></div>`;
+  } else {
+    wrap.innerHTML = `<div class="rak">${label}<div class="shelf-strip"><div class="spines">${items.map(modulSpineHtml).join('')}<button class="add-spine" id="modulAddInline" title="Tambah modul">+</button></div><div class="shelf-ledge"></div></div></div>`;
+  }
+  wrap.querySelectorAll('.spine, .grid-card, .modul-row').forEach(el=>{ el.onclick = ()=> openModulDetail(el.dataset.id); });
+  document.getElementById('modulAddInline').onclick = ()=> openModulForm(null);
 }
 
 function renderModulPage(main){
@@ -2605,12 +2665,33 @@ function renderModulPage(main){
         ${migrasi>0 ? `<button class="btn ghost small" id="btnMigrasiModul">Pindahkan dari rak &quot;Modul UT&quot; (${migrasi})</button>` : ''}
         <button class="btn solid small" id="btnTambahModul">+ Tambah Modul</button>
       </div>
-      <div class="modul-count" id="modulCount"></div>
+      <div class="modul-viewbar">
+        <div class="modul-count" id="modulCount"></div>
+        <div class="view-toggle" id="modulViewToggle">
+      <button type="button" class="vt-btn" data-v="spine" title="Tampilan Rak" aria-label="Tampilan Rak">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="3.5" height="14" rx="1"/><rect x="8.25" y="3" width="3.5" height="14" rx="1"/><rect x="13.5" y="3" width="3.5" height="14" rx="1"/></svg>
+      </button>
+      <button type="button" class="vt-btn" data-v="grid" title="Tampilan Grid" aria-label="Tampilan Grid">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>
+      </button>
+      <button type="button" class="vt-btn" data-v="list" title="Tampilan List" aria-label="Tampilan List">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>
+      </button>
+    </div>
+      </div>
       <div id="modulList"></div>
     </div>`;
   document.getElementById('btnTambahModul').onclick = ()=> openModulForm(null);
   const mig = document.getElementById('btnMigrasiModul');
   if(mig) mig.onclick = migrateModulUT;
+  document.querySelectorAll('#modulViewToggle .vt-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.v===modulView);
+    btn.onclick = ()=>{
+      modulView = btn.dataset.v;
+      document.querySelectorAll('#modulViewToggle .vt-btn').forEach(b=> b.classList.toggle('active', b===btn));
+      renderModulList();
+    };
+  });
   document.getElementById('modulSearchInput').oninput = (e)=>{ modulSearch = e.target.value; renderModulList(); };
   renderModulList();
 }
