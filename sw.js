@@ -1,4 +1,4 @@
-const CACHE = 'katalog-buku-v2';
+const CACHE = 'katalog-buku-v3';
 const PRECACHE_URLS = [
   './',
   './index.html',

@@ -439,6 +439,10 @@
     .spine{width:36px;height:140px;}
     .add-spine{width:36px;height:140px;}
   }
+  .modul-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:16px;}
+  .modul-toolbar .modul-search{flex:1 1 100%;}
+  .modul-toolbar .modul-search input{width:100%;box-sizing:border-box;}
+  .modul-count{font-family:var(--font-label);font-size:12px;color:var(--text-muted);margin:0 0 10px;}
 </style>
 <script>
 /*! xlsx.js (C) 2013-present SheetJS -- http://sheetjs.com */
@@ -906,6 +910,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     <button class="side-nav-item" data-page="jurnal">📖 Jurnal Baca</button>
     <button class="side-nav-item" data-page="keuangan">💰 Laporan Keuangan</button>
     <button class="side-nav-item" data-page="peminjaman">🤝 Peminjaman Buku</button>
+    <button class="side-nav-item" data-page="modul">🎓 Modul Kuliah</button>
 
     <div class="side-nav-divider"></div>
     <button class="side-nav-item side-nav-exit" id="btnExitApp">🚪 Keluar Aplikasi</button>
@@ -1006,6 +1011,45 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   </div>
 </div>
 
+<div class="overlay" id="overlayModul">
+  <div class="modal form-modal">
+    <button class="modal-close" id="closeModul">&times;</button>
+    <h2 id="modulFormTitle">Tambah Modul</h2>
+    <form id="modulForm">
+      <input type="hidden" id="mId">
+      <div class="field"><label>Judul Modul</label><input type="text" id="mJudul" required placeholder="cth: Pengantar Ilmu Administrasi"></div>
+      <div class="field-row">
+        <div class="field"><label>Kode MK (opsional)</label><input type="text" id="mKode" placeholder="cth: ADPU4211"></div>
+        <div class="field"><label>Semester (opsional)</label><input type="text" id="mSemester" placeholder="cth: 3"></div>
+      </div>
+      <div class="field"><label>Penulis / Tim Penyusun</label><input type="text" id="mPenulis"></div>
+      <div class="field">
+        <label>Sampul Modul (opsional)</label>
+        <div class="filedrop" id="mCoverDrop">
+          <div class="cover-preview" id="mCoverPreview" style="display:none;"><img id="mCoverPreviewImg" src=""><span>Sampul terpilih (klik untuk ganti)</span></div>
+          <span id="mCoverDropText">Klik untuk unggah gambar sampul</span>
+        </div>
+        <input type="file" id="mCover" accept="image/*" style="display:none">
+      </div>
+      <div class="field"><label>Catatan</label><textarea id="mCatatan" placeholder="Catatan tentang modul ini..."></textarea></div>
+      <div class="section-divider">Sumber Perolehan</div>
+      <div class="field-row">
+        <div class="field"><label>Harga</label><input type="text" id="mHarga" placeholder="cth: 85.000 atau Gratis"></div>
+        <div class="field"><label>Tanggal Perolehan</label><input type="date" id="mTanggal"></div>
+      </div>
+      <div class="field"><label>Asal / Sumber</label>
+        <div class="ac-wrap">
+          <input type="text" id="mAsal" placeholder="cth: UT, hadiah dari..." autocomplete="off">
+          <div class="ac-list" id="mAsalAc"></div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn ghost" id="cancelModul">Batal</button>
+        <button type="submit" class="btn solid">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
 <div class="overlay" id="overlayLending">
   <div class="modal form-modal">
     <button class="modal-close" id="closeLending">&times;</button>
@@ -1172,11 +1216,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
 const STORAGE_KEY = 'books-collection';
 let books = [];
 let journalEntries = [];
+let modules = []; // modul kuliah (terpisah dari rak buku utama)
+let modulSearch = '';
 let activeRak = '__semua__';
 let activeStatus = '__semua__';
 let viewMode = 'koleksi'; // 'koleksi' | 'wishlist'
 let viewStyle = 'spine'; // 'spine' | 'grid' | 'list'
-let currentPage = 'dashboard'; // 'dashboard' | 'statistik' | 'jurnal' | 'keuangan' | 'peminjaman'
+let currentPage = 'dashboard'; // 'dashboard' | 'statistik' | 'jurnal' | 'keuangan' | 'peminjaman' | 'modul'
 let searchTerm = '';
 const SPINE_COLORS = ['var(--pink-dark)','var(--lilac)','var(--sage)','var(--peach)','var(--rosegold)','#C98FA6'];
 
@@ -1196,7 +1242,7 @@ function showToast(msg){
 
 /* ---------------- Local storage (IndexedDB) ---------------- */
 const DB_NAME = 'katalog-buku-db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 let db;
 function openDB(){
   return new Promise((resolve,reject)=>{
@@ -1206,6 +1252,7 @@ function openDB(){
       if(!_db.objectStoreNames.contains('books')) _db.createObjectStore('books',{keyPath:'id'});
       if(!_db.objectStoreNames.contains('settings')) _db.createObjectStore('settings',{keyPath:'id'});
       if(!_db.objectStoreNames.contains('journal')) _db.createObjectStore('journal',{keyPath:'id'});
+      if(!_db.objectStoreNames.contains('modul')) _db.createObjectStore('modul',{keyPath:'id'});
     };
     req.onsuccess = (e)=>{ db = e.target.result; resolve(db); };
     req.onerror = (e)=> reject(e);
@@ -1246,6 +1293,36 @@ function dbPutAllJournal(list){
     tx.onerror = (e)=> reject(e);
   });
 }
+function dbGetAllModul(){
+  return new Promise((resolve,reject)=>{
+    const req = db.transaction('modul','readonly').objectStore('modul').getAll();
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = (e)=>reject(e);
+  });
+}
+function dbPutAllModul(list){
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('modul','readwrite');
+    const store = tx.objectStore('modul');
+    store.clear();
+    list.forEach(m=> store.put(m));
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = (e)=> reject(e);
+  });
+}
+/* Pindah buku -> modul dalam SATU transaksi: kalau gagal, tidak ada data yang berubah sama sekali */
+function dbMoveToModul(newBooks, newModules){
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(['books','modul'],'readwrite');
+    const bs = tx.objectStore('books');
+    const ms = tx.objectStore('modul');
+    bs.clear(); newBooks.forEach(b=> bs.put(b));
+    ms.clear(); newModules.forEach(m=> ms.put(m));
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = (e)=> reject(e);
+    tx.onabort = (e)=> reject(e);
+  });
+}
 function dbGetSettings(){
   return new Promise((resolve)=>{
     try{
@@ -1272,10 +1349,12 @@ async function loadBooks(){
     books = await dbGetAll();
     settings = await dbGetSettings();
     journalEntries = await dbGetAllJournal();
+    modules = await dbGetAllModul();
     await migrateOldJournalData();
   }catch(e){
     books = [];
     journalEntries = [];
+    modules = [];
   }
 }
 async function saveBooks(){
@@ -1293,6 +1372,16 @@ async function saveJournal(){
     return true;
   }catch(e){
     showToast('Gagal menyimpan catatan — coba lagi');
+    return false;
+  }
+}
+
+async function saveModules(){
+  try{
+    await dbPutAllModul(modules);
+    return true;
+  }catch(e){
+    showToast('Gagal menyimpan modul — coba lagi');
     return false;
   }
 }
@@ -1383,7 +1472,7 @@ async function runAutoBackupDownloads(){
 }
 
 function exportBackup(){
-  const payload = {app:'katalog-buku', version:1, exportedAt: Date.now(), books};
+  const payload = {app:'katalog-buku', version:2, exportedAt: Date.now(), books, modules};
   const blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1398,7 +1487,8 @@ async function importBackup(file){
     const text = await file.text();
     const payload = JSON.parse(text);
     if(!payload.books || !Array.isArray(payload.books)) throw new Error('Format file tidak sesuai');
-    if(!confirm(`Impor ${payload.books.length} buku dari cadangan ini? Buku dengan judul/ID yang sama akan ditimpa.`)) return;
+    const modulMasuk = Array.isArray(payload.modules) ? payload.modules : [];
+    if(!confirm(`Impor ${payload.books.length} buku${modulMasuk.length? ' dan '+modulMasuk.length+' modul kuliah' : ''} dari cadangan ini? Data dengan ID yang sama akan ditimpa.`)) return;
     const merged = [...books];
     payload.books.forEach(nb=>{
       const idx = merged.findIndex(b=>b.id===nb.id);
@@ -1406,6 +1496,12 @@ async function importBackup(file){
     });
     books = merged;
     await saveBooks();
+    if(modulMasuk.length){
+      const mm = [...modules];
+      modulMasuk.forEach(nm=>{ const i = mm.findIndex(m=>m.id===nm.id); if(i>=0) mm[i]=nm; else mm.push(nm); });
+      modules = mm;
+      await saveModules();
+    }
     render();
     showToast('Impor selesai');
   }catch(err){
@@ -1434,6 +1530,15 @@ function buildBackupWorkbook(){
   ws['!cols'] = [{wch:28},{wch:20},{wch:14},{wch:13},{wch:12},{wch:22},{wch:16},{wch:16},{wch:30}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Koleksi Buku');
+  if(modules.length){
+    const mrows = modules.slice().sort((a,b)=> (a.judul||'').localeCompare(b.judul||'')).map(m=>({
+      'Judul Modul': m.judul||'', 'Kode MK': m.kode||'', 'Semester': m.semester||'', 'Penulis': m.penulis||'',
+      'Harga': m.harga||'', 'Asal/Sumber': m.asal||'', 'Tanggal Perolehan': formatTanggal(m.tanggalPerolehan)||'', 'Catatan': m.catatan||''
+    }));
+    const ws2 = XLSX.utils.json_to_sheet(mrows);
+    ws2['!cols'] = [{wch:32},{wch:12},{wch:9},{wch:22},{wch:12},{wch:22},{wch:16},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Modul Kuliah');
+  }
   return wb;
 }
 
@@ -1529,6 +1634,7 @@ const PAGE_META = {
   jurnal: {eyebrow:'catatan & kesan', title:'Jurnal Baca'},
   keuangan: {eyebrow:'catatan pengeluaran', title:'Laporan Keuangan'},
   peminjaman: {eyebrow:'sedang di tangan orang lain', title:'Peminjaman Buku'},
+  modul: {eyebrow:'bahan kuliah', title:'Modul Kuliah'},
 };
 
 function render(){
@@ -1681,6 +1787,7 @@ function renderMain(){
   if(currentPage==='jurnal'){ renderJurnalPage(main); return; }
   if(currentPage==='keuangan'){ renderKeuanganPage(main); return; }
   if(currentPage==='peminjaman'){ renderPeminjamanPage(main); return; }
+  if(currentPage==='modul'){ renderModulPage(main); return; }
 
   if(viewMode==='wishlist'){
     renderWishlistView(main);
@@ -1921,7 +2028,7 @@ function renderKeuanganPage(main){
 /* ---------------- Halaman: Jurnal Baca (notebook terpisah) ---------------- */
 function journalIdentity(j){
   if(j.bookId){
-    const book = books.find(b=>b.id===j.bookId);
+    const book = books.find(b=>b.id===j.bookId) || modules.find(b=>b.id===j.bookId);
     if(book) return {judul: book.judul, penulis: book.penulis, cover: book.coverDataUrl, colorSeed: book.id};
   }
   return {judul: j.manualJudul||'Tanpa Judul', penulis: j.manualPenulis, cover: null, colorSeed: j.id};
@@ -2078,7 +2185,7 @@ function setJBookSearchValue(bookId){
   const input = document.getElementById('jBookSearch');
   document.getElementById('jBookSelect').value = bookId || '';
   if(bookId){
-    const b = books.find(x=>x.id===bookId);
+    const b = books.find(x=>x.id===bookId) || modules.find(x=>x.id===bookId);
     input.value = b ? (b.judul + (b.penulis? ' — '+b.penulis : '')) : '';
   } else {
     input.value = '';
@@ -2441,6 +2548,219 @@ function openDetail(id){
   };
 }
 
+/* ---------------- Modul Kuliah (terpisah dari rak utama) ---------------- */
+function normRak(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function migratableBooks(){ return books.filter(b=>!b.isWishlist && normRak(b.rak)==='modulut'); }
+
+function modulRowHtml(m){
+  const color = spineColorFor(m.id);
+  const cover = m.coverDataUrl
+    ? `<img class="list-cover" src="${m.coverDataUrl}">`
+    : `<div class="list-cover list-cover-blank" style="background:${color}"></div>`;
+  const parts = [];
+  if(m.kode) parts.push(escapeHtml(m.kode));
+  parts.push(m.penulis ? escapeHtml(m.penulis) : 'Penulis tidak diketahui');
+  if(m.semester) parts.push('Sem. '+escapeHtml(m.semester));
+  return `<div class="list-row modul-row" data-id="${m.id}">
+    ${cover}
+    <div class="list-row-info">
+      <div class="list-row-title">${escapeHtml(m.judul)}</div>
+      <div class="list-row-sub">${parts.join(' &middot; ')}</div>
+    </div>
+    <div class="list-row-tags">${m.harga? `<span class="list-price">${escapeHtml(m.harga)}</span>`:''}</div>
+  </div>`;
+}
+
+function renderModulList(){
+  const wrap = document.getElementById('modulList');
+  if(!wrap) return;
+  const term = modulSearch.trim().toLowerCase();
+  const items = modules.filter(m=> !term
+      || (m.judul||'').toLowerCase().includes(term)
+      || (m.penulis||'').toLowerCase().includes(term)
+      || (m.kode||'').toLowerCase().includes(term))
+    .sort((a,b)=> (a.judul||'').localeCompare(b.judul||''));
+  document.getElementById('modulCount').textContent = term
+    ? `${items.length} dari ${modules.length} modul`
+    : `${modules.length} modul`;
+  if(items.length===0){
+    wrap.innerHTML = modules.length===0
+      ? `<div class="empty-state"><div class="frame"></div><h3>Belum ada modul kuliah</h3><p>Tambahkan modul baru, atau pindahkan yang sudah ada di rak &quot;Modul UT&quot; lewat tombol di atas.</p></div>`
+      : `<div class="empty-state"><h3>Tidak ditemukan</h3><p>Tidak ada modul yang cocok dengan pencarian.</p></div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="list-wrap">${items.map(modulRowHtml).join('')}</div>`;
+  wrap.querySelectorAll('.modul-row').forEach(el=>{ el.onclick = ()=> openModulDetail(el.dataset.id); });
+}
+
+function renderModulPage(main){
+  const migrasi = migratableBooks().length;
+  main.innerHTML = `
+    <div class="stat-page">
+      <div class="modul-toolbar">
+        <div class="search-slot modul-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="modulSearchInput" placeholder="Cari judul/penulis/kode MK..." value="${escapeHtml(modulSearch)}">
+        </div>
+        ${migrasi>0 ? `<button class="btn ghost small" id="btnMigrasiModul">Pindahkan dari rak &quot;Modul UT&quot; (${migrasi})</button>` : ''}
+        <button class="btn solid small" id="btnTambahModul">+ Tambah Modul</button>
+      </div>
+      <div class="modul-count" id="modulCount"></div>
+      <div id="modulList"></div>
+    </div>`;
+  document.getElementById('btnTambahModul').onclick = ()=> openModulForm(null);
+  const mig = document.getElementById('btnMigrasiModul');
+  if(mig) mig.onclick = migrateModulUT;
+  document.getElementById('modulSearchInput').oninput = (e)=>{ modulSearch = e.target.value; renderModulList(); };
+  renderModulList();
+}
+
+async function migrateModulUT(){
+  const cand = migratableBooks();
+  if(cand.length===0){ showToast('Tidak ada buku di rak Modul UT'); return; }
+  const lent = cand.filter(b=>b.dipinjamkan);
+  const movable = cand.filter(b=>!b.dipinjamkan);
+  if(movable.length===0){
+    alert('Semua buku di rak "Modul UT" sedang ditandai dipinjamkan. Tandai dikembalikan dulu, lalu coba lagi.');
+    return;
+  }
+  let msg = `Pindahkan ${movable.length} buku dari rak "Modul UT" ke menu Modul Kuliah?\n\nSetelah dipindah, buku-buku ini tidak lagi dihitung di beranda maupun statistik. Status baca dan halaman tidak ikut dipindahkan.`;
+  if(lent.length) msg += `\n\n${lent.length} buku sedang ditandai dipinjamkan, jadi tidak ikut dipindahkan.`;
+  if(!confirm(msg)) return;
+  const ids = new Set(movable.map(b=>b.id));
+  const newMods = movable.map(b=>({
+    id: b.id,
+    judul: b.judul||'Tanpa Judul',
+    kode: '', semester: '',
+    penulis: b.penulis||'',
+    catatan: b.catatan||'',
+    harga: b.harga||'',
+    asal: b.asal||'',
+    tanggalPerolehan: b.tanggalPerolehan||'',
+    addedBy: b.addedBy||'',
+    addedAt: b.addedAt||Date.now(),
+    coverDataUrl: b.coverDataUrl||null,
+  }));
+  const newBooks = books.filter(b=>!ids.has(b.id));
+  const newModules = modules.filter(m=>!ids.has(m.id)).concat(newMods);
+  try{
+    await dbMoveToModul(newBooks, newModules);
+    books = newBooks;
+    modules = newModules;
+    activeRak = '__semua__';
+    render();
+    showToast(`${newMods.length} buku dipindahkan ke Modul Kuliah`);
+  }catch(err){
+    alert('Gagal memindahkan data. Tidak ada data yang diubah — coba lagi.');
+  }
+}
+
+function openModulDetail(id){
+  const m = modules.find(x=>x.id===id);
+  if(!m) return;
+  const card = document.getElementById('catalogCard');
+  const tanggal = formatTanggal(m.tanggalPerolehan);
+  card.innerHTML = `
+    <button class="modal-close" id="closeDetail">&times;</button>
+    ${m.coverDataUrl ? `<div class="cover-frame"><div class="bow"></div><img src="${m.coverDataUrl}"></div>` : ''}
+    <div class="kartu-eyebrow">Modul Kuliah${m.addedBy? ' &middot; oleh '+escapeHtml(m.addedBy):''}</div>
+    <h2>${escapeHtml(m.judul)}</h2>
+    <p class="penulis">${m.penulis? escapeHtml(m.penulis) : 'Penulis tidak diketahui'}</p>
+    <div class="catalog-meta">
+      ${m.kode? `<span class="k">Kode MK</span><span>${escapeHtml(m.kode)}</span>` : ''}
+      ${m.semester? `<span class="k">Semester</span><span>${escapeHtml(m.semester)}</span>` : ''}
+      <span class="k">Ditambahkan</span><span>${new Date(m.addedAt).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
+      ${m.harga? `<span class="k">Harga</span><span>${escapeHtml(m.harga)}</span>` : ''}
+      ${m.asal? `<span class="k">Asal</span><span>${escapeHtml(m.asal)}</span>` : ''}
+      ${tanggal? `<span class="k">Diperoleh</span><span>${tanggal}</span>` : ''}
+    </div>
+    ${m.catatan? `<div class="catatan-box">${escapeHtml(m.catatan)}</div>` : ''}
+    <div class="catalog-actions">
+      <button class="btn ghost small" id="btnEditModul">Edit</button>
+      <button class="btn danger small" id="btnHapusModul">Hapus</button>
+    </div>`;
+  const ov = document.getElementById('overlayDetail');
+  ov.classList.add('show');
+  document.getElementById('closeDetail').onclick = ()=> ov.classList.remove('show');
+  document.getElementById('btnEditModul').onclick = ()=>{ ov.classList.remove('show'); openModulForm(m); };
+  document.getElementById('btnHapusModul').onclick = async ()=>{
+    if(confirm(`Hapus modul "${m.judul}"?`)){
+      modules = modules.filter(x=>x.id!==m.id);
+      await saveModules();
+      ov.classList.remove('show');
+      render(); showToast('Modul dihapus');
+    }
+  };
+}
+
+let pendingModulCover = null;
+function openModulForm(m){
+  pendingModulCover = null;
+  document.getElementById('modulFormTitle').textContent = m? 'Edit Modul' : 'Tambah Modul';
+  document.getElementById('mId').value = m? m.id : '';
+  document.getElementById('mJudul').value = m? m.judul : '';
+  document.getElementById('mKode').value = m? (m.kode||'') : '';
+  document.getElementById('mSemester').value = m? (m.semester||'') : '';
+  document.getElementById('mPenulis').value = m? (m.penulis||'') : '';
+  document.getElementById('mCatatan').value = m? (m.catatan||'') : '';
+  document.getElementById('mHarga').value = m? (m.harga||'') : '';
+  document.getElementById('mAsal').value = m? (m.asal||'') : '';
+  document.getElementById('mTanggal').value = m? (m.tanggalPerolehan||'') : '';
+  const prev = document.getElementById('mCoverPreview');
+  const prevImg = document.getElementById('mCoverPreviewImg');
+  const txt = document.getElementById('mCoverDropText');
+  if(m && m.coverDataUrl){ prev.style.display='flex'; prevImg.src = m.coverDataUrl; txt.style.display='none'; }
+  else { prev.style.display='none'; txt.style.display='inline'; }
+  document.getElementById('overlayModul').classList.add('show');
+}
+document.getElementById('closeModul').onclick = ()=> document.getElementById('overlayModul').classList.remove('show');
+document.getElementById('cancelModul').onclick = ()=> document.getElementById('overlayModul').classList.remove('show');
+document.getElementById('overlayModul').addEventListener('click', (e)=>{ if(e.target.id==='overlayModul') e.target.classList.remove('show'); });
+document.getElementById('mCoverDrop').onclick = ()=> document.getElementById('mCover').click();
+document.getElementById('mCover').onchange = async (e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  try{
+    pendingModulCover = await compressImage(f);
+    document.getElementById('mCoverPreview').style.display = 'flex';
+    document.getElementById('mCoverPreviewImg').src = pendingModulCover;
+    document.getElementById('mCoverDropText').style.display = 'none';
+  }catch(err){ showToast('Gagal memproses gambar'); }
+};
+setupAutocomplete('mAsal', 'mAsalAc', ()=> Array.from(new Set([...modules.map(m=>m.asal), ...books.map(b=>b.asal)].filter(Boolean))).sort());
+document.getElementById('mHarga').addEventListener('input', (e)=>{
+  const raw = e.target.value;
+  if(/[a-zA-Z]/.test(raw)) return;
+  const digits = raw.replace(/[^0-9]/g,'');
+  if(digits.length===0) return;
+  e.target.value = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+});
+document.getElementById('modulForm').onsubmit = async (e)=>{
+  e.preventDefault();
+  const id = document.getElementById('mId').value || uid();
+  const existing = modules.find(x=>x.id===id);
+  const mod = {
+    id,
+    judul: document.getElementById('mJudul').value.trim() || 'Tanpa Judul',
+    kode: document.getElementById('mKode').value.trim(),
+    semester: document.getElementById('mSemester').value.trim(),
+    penulis: document.getElementById('mPenulis').value.trim(),
+    catatan: document.getElementById('mCatatan').value.trim(),
+    harga: document.getElementById('mHarga').value.trim(),
+    asal: document.getElementById('mAsal').value.trim(),
+    tanggalPerolehan: document.getElementById('mTanggal').value,
+    addedBy: existing? (existing.addedBy||'') : '',
+    addedAt: existing? existing.addedAt : Date.now(),
+    coverDataUrl: pendingModulCover || (existing? existing.coverDataUrl : null) || null,
+  };
+  if(existing){ modules = modules.map(x=> x.id===id? mod : x); }
+  else{ modules.push(mod); }
+  const ok = await saveModules();
+  document.getElementById('overlayModul').classList.remove('show');
+  render();
+  if(ok) showToast(existing? 'Perubahan disimpan' : 'Modul ditambahkan');
+};
+
 /* ---------------- Peminjaman (lending) mini-form ---------------- */
 function openLendingForm(book){
   document.getElementById('overlayDetail').classList.remove('show');
@@ -2623,6 +2943,13 @@ document.getElementById('btnExitApp').onclick = ()=>{
 document.getElementById('closeSide').onclick = ()=> document.getElementById('overlaySide').classList.remove('show');
 document.getElementById('overlaySide').addEventListener('click', (e)=>{ if(e.target.id==='overlaySide') e.target.classList.remove('show'); });
 document.querySelectorAll('.side-nav-item').forEach(btn=>{
+  if(!btn.dataset.page){
+    btn.onclick = ()=>{
+      document.getElementById('overlaySide').classList.remove('show');
+      if(!exitConfirmBusy) document.getElementById('overlayExitConfirm').classList.add('show');
+    };
+    return;
+  }
   btn.onclick = ()=>{
     currentPage = btn.dataset.page;
     document.querySelectorAll('.side-nav-item').forEach(b=> b.classList.toggle('active', b===btn));
